@@ -42,6 +42,7 @@
     <string name="action_sort_last_read">Last read</string>
     <string name="action_sort_last_checked">Last checked</string>
     <string name="action_sort_latest_chapter">Latest chapter</string>
+    <string name="action_sort_chapter_fetch_date">Date fetched</string>
     <string name="action_sort_date_added">Date added</string>
     <string name="action_search">Search</string>
     <string name="action_search_settings">Search settings</string>
@@ -225,6 +226,9 @@
     </plurals>
     <string name="pref_library_update_categories">Categories to include in global update</string>
     <string name="all">All</string>
+    <string name="none">None</string>
+    <string name="include">Include: %s</string>
+    <string name="exclude">Exclude: %s</string>
 
       <!-- Extension section -->
     <string name="all_lang">All</string>

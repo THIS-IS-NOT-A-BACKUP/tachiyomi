@@ -39,10 +39,9 @@ fun getRecentsQuery() =
     SELECT ${Manga.TABLE}.${Manga.COL_URL} as mangaUrl, * FROM ${Manga.TABLE} JOIN ${Chapter.TABLE}
     ON ${Manga.TABLE}.${Manga.COL_ID} = ${Chapter.TABLE}.${Chapter.COL_MANGA_ID}
     WHERE ${Manga.COL_FAVORITE} = 1 
-    AND ${Chapter.COL_DATE_FETCH} > ?
+    AND ${Chapter.COL_DATE_UPLOAD} > ?
     AND ${Chapter.COL_DATE_FETCH} > ${Manga.COL_DATE_ADDED}
-    ORDER BY ${Chapter.COL_DATE_FETCH} DESC
-    LIMIT 500
+    ORDER BY ${Chapter.COL_DATE_UPLOAD} DESC
 """
 
 /**
@@ -116,6 +115,16 @@ fun getTotalChapterMangaQuery() =
 fun getLatestChapterMangaQuery() =
     """
     SELECT ${Manga.TABLE}.*, MAX(${Chapter.TABLE}.${Chapter.COL_DATE_UPLOAD}) AS max
+    FROM ${Manga.TABLE}
+    JOIN ${Chapter.TABLE}
+    ON ${Manga.TABLE}.${Manga.COL_ID} = ${Chapter.TABLE}.${Chapter.COL_MANGA_ID}
+    GROUP BY ${Manga.TABLE}.${Manga.COL_ID}
+    ORDER by max DESC
+"""
+
+fun getChapterFetchDateMangaQuery() =
+    """
+    SELECT ${Manga.TABLE}.*, MAX(${Chapter.TABLE}.${Chapter.COL_DATE_FETCH}) AS max
     FROM ${Manga.TABLE}
     JOIN ${Chapter.TABLE}
     ON ${Manga.TABLE}.${Manga.COL_ID} = ${Chapter.TABLE}.${Chapter.COL_MANGA_ID}
