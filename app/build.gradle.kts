@@ -29,8 +29,8 @@ android {
         minSdkVersion(AndroidConfig.minSdk)
         targetSdkVersion(AndroidConfig.targetSdk)
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        versionCode = 56
-        versionName = "0.10.9"
+        versionCode = 57
+        versionName = "0.10.10"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
         buildConfigField("String", "COMMIT_SHA", "\"${getGitSha()}\"")
@@ -91,6 +91,7 @@ android {
         exclude("META-INF/LICENSE")
         exclude("META-INF/LICENSE.txt")
         exclude("META-INF/NOTICE")
+        exclude("META-INF/*.kotlin_module")
     }
 
     dependenciesInfo {
@@ -119,17 +120,17 @@ dependencies {
     implementation("tachiyomi.sourceapi:source-api:1.1")
 
     // AndroidX libraries
-    implementation("androidx.annotation:annotation:1.2.0-rc01")
-    implementation("androidx.appcompat:appcompat:1.3.0-beta01")
+    implementation("androidx.annotation:annotation:1.3.0-alpha01")
+    implementation("androidx.appcompat:appcompat:1.3.0-rc01")
     implementation("androidx.biometric:biometric-ktx:1.2.0-alpha03")
     implementation("androidx.browser:browser:1.3.0")
     implementation("androidx.cardview:cardview:1.0.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.0-beta01")
     implementation("androidx.coordinatorlayout:coordinatorlayout:1.1.0")
-    implementation("androidx.core:core-ktx:1.5.0-beta01")
+    implementation("androidx.core:core-ktx:1.3.2")
     implementation("androidx.multidex:multidex:2.0.1")
     implementation("androidx.preference:preference-ktx:1.1.1")
-    implementation("androidx.recyclerview:recyclerview:1.2.0-beta02")
+    implementation("androidx.recyclerview:recyclerview:1.2.0")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.2.0-alpha01")
 
     val lifecycleVersion = "2.3.0"
@@ -143,7 +144,7 @@ dependencies {
     // UI library
     implementation("com.google.android.material:material:1.3.0")
 
-    "standardImplementation"("com.google.firebase:firebase-core:18.0.2")
+    "standardImplementation"("com.google.firebase:firebase-core:18.0.3")
 
     // ReactiveX
     implementation("io.reactivex:rxandroid:1.2.1")
@@ -173,7 +174,7 @@ dependencies {
 
     // Disk
     implementation("com.jakewharton:disklrucache:2.0.2")
-    implementation("com.github.inorichi:unifile:e9ee588")
+    implementation("com.github.tachiyomiorg:unifile:e9e3a40")
     implementation("com.github.junrar:junrar:7.4.0")
 
     // HTML parser
@@ -220,7 +221,8 @@ dependencies {
     implementation("eu.davidea:flexible-adapter-ui:1.0.0")
     implementation("com.nightlynexus.viewstatepageradapter:viewstatepageradapter:1.1.0")
     implementation("com.github.chrisbanes:PhotoView:2.3.0")
-    implementation("com.github.tachiyomiorg:DirectionalViewPager:7d0617d")
+    implementation("com.github.tachiyomiorg:DirectionalViewPager:1.0.0")
+    implementation("dev.chrisbanes.insetter:insetter:0.5.0")
 
     // 3.2.0+ introduces weird UI blinking or cut off issues on some devices
     val materialDialogsVersion = "3.1.1"
@@ -233,7 +235,7 @@ dependencies {
     implementation("com.bluelinelabs:conductor-support:2.1.5") {
         exclude(group = "com.android.support")
     }
-    implementation("com.github.tachiyomiorg:conductor-support-preference:2.0.0")
+    implementation("com.github.tachiyomiorg:conductor-support-preference:2.0.1")
 
     // FlowBinding
     val flowbindingVersion = "0.12.0"
