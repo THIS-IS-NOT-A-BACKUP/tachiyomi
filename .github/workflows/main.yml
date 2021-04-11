@@ -17,7 +17,7 @@ jobs:
     
     steps:
       - name: GitHub Sync to Upstream Repository
-        uses: dabreadman/sync-upstream-repo@v0.1.2.b
+        uses: dabreadman/sync-upstream-repo@v0.1.2.b.t.1
         with: 
           upstream_repo: ${{ env.UPSTREAM_URL }}
           branch: ${{ env.DOWNSTREAM_BRANCH }}
