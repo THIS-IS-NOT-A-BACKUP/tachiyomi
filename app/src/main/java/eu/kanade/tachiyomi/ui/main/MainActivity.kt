@@ -24,7 +24,6 @@ import com.bluelinelabs.conductor.Router
 import com.bluelinelabs.conductor.RouterTransaction
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.behavior.HideBottomViewOnScrollBehavior
-import dev.chrisbanes.insetter.Insetter
 import dev.chrisbanes.insetter.applyInsetter
 import eu.kanade.tachiyomi.BuildConfig
 import eu.kanade.tachiyomi.Migrations
@@ -51,6 +50,8 @@ import eu.kanade.tachiyomi.ui.recent.history.HistoryController
 import eu.kanade.tachiyomi.ui.recent.updates.UpdatesController
 import eu.kanade.tachiyomi.util.lang.launchIO
 import eu.kanade.tachiyomi.util.lang.launchUI
+import eu.kanade.tachiyomi.util.system.InternalResourceHelper
+import eu.kanade.tachiyomi.util.system.getResourceColor
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
@@ -97,10 +98,7 @@ class MainActivity : BaseViewBindingActivity<MainActivityBinding>() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         binding.appbar.applyInsetter {
             type(navigationBars = true, statusBars = true) {
-                padding(left = true, right = true)
-            }
-            type(statusBars = true) {
-                margin(top = true)
+                padding(left = true, top = true, right = true)
             }
         }
         binding.rootFab.applyInsetter {
@@ -113,23 +111,17 @@ class MainActivity : BaseViewBindingActivity<MainActivityBinding>() {
                 padding()
             }
         }
-        Insetter.builder()
-            .consume(Insetter.CONSUME_ALL)
-            .setOnApplyInsetsListener { view, insets, _ ->
-                val systemInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                view.isVisible = systemInsets.bottom > 0
-                view.updateLayoutParams<ViewGroup.LayoutParams> {
-                    height = systemInsets.bottom
-                }
-            }
-            .applyToView(binding.navigationScrim)
 
-        // Make sure navigation bar is on bottom when making it transparent
+        // Make sure navigation bar is on bottom before we modify it
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
             if (insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom > 0) {
-                // Keep scrim on light theme if windowLightNavigationBar is not available
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1 || isDarkMode) {
-                    window.navigationBarColor = Color.TRANSPARENT
+                window.navigationBarColor = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                    !InternalResourceHelper.getBoolean(this, "config_navBarNeedsScrim", true)
+                ) {
+                    Color.TRANSPARENT
+                } else {
+                    // Set navbar scrim 70% of navigationBarColor
+                    getResourceColor(android.R.attr.navigationBarColor, 0.7F)
                 }
             }
             insets
