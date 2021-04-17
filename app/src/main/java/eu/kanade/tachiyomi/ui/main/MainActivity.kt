@@ -153,6 +153,9 @@ class MainActivity : BaseViewBindingActivity<MainActivityBinding>() {
                         val controller = router.getControllerWithTag(id.toString()) as? LibraryController
                         controller?.showSettingsSheet()
                     }
+                    R.id.nav_updates -> {
+                        router.pushController(DownloadController().withFadeTransaction())
+                    }
                 }
             }
             true
@@ -446,7 +449,7 @@ class MainActivity : BaseViewBindingActivity<MainActivityBinding>() {
     fun fixViewToBottom(view: View) {
         val listener = AppBarLayout.OnOffsetChangedListener { appBarLayout, verticalOffset ->
             val maxAbsOffset = appBarLayout.measuredHeight - binding.tabs.measuredHeight
-            view.translationY = -maxAbsOffset - verticalOffset.toFloat() - appBarLayout.marginTop
+            view.translationY = -maxAbsOffset - verticalOffset.toFloat() + appBarLayout.marginTop
         }
         binding.appbar.addOnOffsetChangedListener(listener)
         fixedViewsToBottom[view] = listener
