@@ -29,7 +29,7 @@ android {
         minSdkVersion(AndroidConfig.minSdk)
         targetSdkVersion(AndroidConfig.targetSdk)
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        versionCode = 59
+        versionCode = 60
         versionName = "0.10.12"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
@@ -184,7 +184,7 @@ dependencies {
     implementation("androidx.sqlite:sqlite-ktx:2.1.0")
     implementation("com.github.inorichi.storio:storio-common:8be19de@aar")
     implementation("com.github.inorichi.storio:storio-sqlite:8be19de@aar")
-    implementation("io.requery:sqlite-android:3.33.0")
+    implementation("com.github.requery:sqlite-android:3.35.5")
 
     // Preferences
     implementation("com.github.tfcporciuncula.flow-preferences:flow-preferences:1.3.4")
@@ -198,10 +198,9 @@ dependencies {
     implementation("com.github.inorichi.injekt:injekt-core:65b0440")
 
     // Image library
-    val glideVersion = "4.12.0"
-    implementation("com.github.bumptech.glide:glide:$glideVersion")
-    implementation("com.github.bumptech.glide:okhttp3-integration:$glideVersion")
-    kapt("com.github.bumptech.glide:compiler:$glideVersion")
+    val coilVersion = "1.2.0"
+    implementation("io.coil-kt:coil:$coilVersion")
+    implementation("io.coil-kt:coil-gif:$coilVersion")
 
     implementation("com.github.tachiyomiorg:subsampling-scale-image-view:547d9c0")
 
@@ -278,7 +277,8 @@ tasks {
             "-Xuse-experimental=kotlinx.coroutines.FlowPreview",
             "-Xuse-experimental=kotlinx.coroutines.ExperimentalCoroutinesApi",
             "-Xuse-experimental=kotlinx.coroutines.InternalCoroutinesApi",
-            "-Xuse-experimental=kotlinx.serialization.ExperimentalSerializationApi"
+            "-Xuse-experimental=kotlinx.serialization.ExperimentalSerializationApi",
+            "-Xuse-experimental=coil.annotation.ExperimentalCoilApi",
         )
     }
 
