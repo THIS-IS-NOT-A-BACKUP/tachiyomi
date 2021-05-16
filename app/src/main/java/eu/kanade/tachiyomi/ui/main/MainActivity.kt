@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
@@ -465,8 +466,8 @@ class MainActivity : BaseViewBindingActivity<MainActivityBinding>() {
             if (visible) {
                 if (collapse) {
                     bottomNavAnimator?.expand()
+                    updateNavMenu(it.menu)
                 }
-
                 bottomViewNavigationBehavior?.slideUp(it)
             } else {
                 if (collapse) {
@@ -481,7 +482,13 @@ class MainActivity : BaseViewBindingActivity<MainActivityBinding>() {
     private fun showSideNav(visible: Boolean) {
         binding.sideNav?.let {
             it.isVisible = visible
+            updateNavMenu(it.menu)
         }
+    }
+
+    private fun updateNavMenu(menu: Menu) {
+        menu.findItem(R.id.nav_updates).isVisible = preferences.showNavUpdates()
+        menu.findItem(R.id.nav_history).isVisible = preferences.showNavHistory()
     }
 
     /**
