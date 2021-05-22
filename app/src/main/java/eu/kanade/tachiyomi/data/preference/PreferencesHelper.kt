@@ -65,7 +65,7 @@ class PreferencesHelper(val context: Context) {
 
     fun hideBottomBar() = flowPrefs.getBoolean(Keys.hideBottomBar, true)
 
-    fun useBiometricLock() = flowPrefs.getBoolean(Keys.useBiometricLock, false)
+    fun useAuthenticator() = flowPrefs.getBoolean(Keys.useAuthenticator, false)
 
     fun lockAppAfter() = flowPrefs.getInt(Keys.lockAppAfter, 0)
 
@@ -170,6 +170,8 @@ class PreferencesHelper(val context: Context) {
     fun updateOnlyNonCompleted() = prefs.getBoolean(Keys.updateOnlyNonCompleted, false)
 
     fun autoUpdateTrack() = prefs.getBoolean(Keys.autoUpdateTrack, true)
+
+    fun autoAddTrack() = prefs.getBoolean(Keys.autoAddTrack, true)
 
     fun lastUsedSource() = flowPrefs.getLong(Keys.lastUsedSource, -1)
 
