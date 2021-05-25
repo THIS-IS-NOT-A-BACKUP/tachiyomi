@@ -132,6 +132,20 @@
         <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
     </style>
 
+    <!--== Strawberry Daiquiri theme ==-->
+    <style name="Theme.Tachiyomi.Light.StrawberryDaiquiri">
+        <!-- Theme colors -->
+        <item name="colorAccentOnPrimary">@color/colorAccentStrawberry</item>
+        <item name="colorSecondary">@color/colorAccentStrawberry</item>
+        <item name="colorAccent">@color/colorAccentStrawberry</item>
+
+        <!-- Ripples -->
+        <item name="rippleSecondaryColor">@color/rippleSecondaryColorStrawberry</item>
+
+        <!-- Custom Attributes-->
+        <item name="colorLibrarySelectionActive">@color/selectorColorStrawberry</item>
+    </style>
+
     <!--=============-->
     <!-- Dark Themes -->
     <!--=============-->
@@ -232,6 +246,21 @@
         <!-- Ripples -->
         <item name="rippleSecondaryColor">@color/md_black_1000_6</item>
         <item name="rippleToolbarColor">@color/md_black_1000_12</item>
+    </style>
+
+    <!--== Green Apple theme ==-->
+    <style name="Theme.Tachiyomi.Dark.GreenApple">
+        <!-- Theme colors -->
+        <item name="colorAccentOnPrimary">@color/colorAccentApple</item>
+        <item name="colorSecondary">@color/colorAccentApple</item>
+        <item name="colorOnSecondary">@color/colorOnSecondaryApple</item>
+        <item name="colorAccent">@color/colorAccentApple</item>
+
+        <!-- Ripples -->
+        <item name="rippleSecondaryColor">@color/rippleSecondaryColorApple</item>
+
+        <!-- Custom Attributes-->
+        <item name="colorLibrarySelectionActive">@color/selectorColorApple</item>
     </style>
 
     <!--== Midnight Dusk theme ==-->

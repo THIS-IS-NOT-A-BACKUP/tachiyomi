@@ -8,7 +8,6 @@ plugins {
     id("com.android.application")
     id("com.mikepenz.aboutlibraries.plugin")
     kotlin("android")
-    kotlin("kapt")
     kotlin("plugin.serialization")
     id("com.github.zellius.shortcut-helper")
 }
@@ -121,7 +120,7 @@ android {
 dependencies {
 
     // Source models and interfaces from Tachiyomi 1.x
-    implementation("tachiyomi.sourceapi:source-api:1.1")
+    implementation("org.tachiyomi:source-api:1.1")
 
     // AndroidX libraries
     implementation("androidx.annotation:annotation:1.3.0-alpha01")
@@ -206,7 +205,10 @@ dependencies {
     implementation("io.coil-kt:coil:$coilVersion")
     implementation("io.coil-kt:coil-gif:$coilVersion")
 
-    implementation("com.github.tachiyomiorg:subsampling-scale-image-view:846abe0")
+    implementation("com.github.tachiyomiorg:subsampling-scale-image-view:846abe0") {
+        exclude(module = "image-decoder")
+    }
+    implementation("com.github.tachiyomiorg:image-decoder:0d9ab1f")
 
     // Logging
     implementation("com.jakewharton.timber:timber:4.7.1")
