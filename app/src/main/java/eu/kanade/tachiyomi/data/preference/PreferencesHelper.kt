@@ -38,8 +38,9 @@ operator fun <T> Preference<Set<T>>.minusAssign(item: T) {
     set(get() - item)
 }
 
-fun Preference<Boolean>.toggle() {
+fun Preference<Boolean>.toggle(): Boolean {
     set(!get())
+    return get()
 }
 
 class PreferencesHelper(val context: Context) {
@@ -82,8 +83,6 @@ class PreferencesHelper(val context: Context) {
     fun autoUpdateTrackers() = prefs.getBoolean(Keys.autoUpdateTrackers, false)
 
     fun showLibraryUpdateErrors() = prefs.getBoolean(Keys.showLibraryUpdateErrors, false)
-
-    fun clear() = prefs.edit { clear() }
 
     fun themeMode() = flowPrefs.getEnum(Keys.themeMode, Values.ThemeMode.system)
 
