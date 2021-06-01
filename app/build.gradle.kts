@@ -18,6 +18,8 @@ if (gradle.startParameter.taskRequests.toString().contains("Standard")) {
 
 shortcutHelper.setFilePath("./shortcuts.xml")
 
+val SUPPORTED_ABIS = setOf("armeabi-v7a", "arm64-v8a", "x86")
+
 android {
     compileSdkVersion(AndroidConfig.compileSdk)
     buildToolsVersion(AndroidConfig.buildTools)
@@ -28,8 +30,8 @@ android {
         minSdkVersion(AndroidConfig.minSdk)
         targetSdkVersion(AndroidConfig.targetSdk)
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        versionCode = 61
-        versionName = "0.10.12"
+        versionCode = 63
+        versionName = "0.11.1"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
         buildConfigField("String", "COMMIT_SHA", "\"${getGitSha()}\"")
@@ -42,12 +44,17 @@ android {
         multiDexEnabled = true
 
         ndk {
-            abiFilters += setOf("armeabi-v7a", "arm64-v8a", "x86")
+            abiFilters += SUPPORTED_ABIS
         }
     }
 
-    buildFeatures {
-        viewBinding = true
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include(*SUPPORTED_ABIS.toTypedArray())
+            isUniversalApk = true
+        }
     }
 
     buildTypes {
@@ -99,6 +106,10 @@ android {
 
     dependenciesInfo {
         includeInApk = false
+    }
+
+    buildFeatures {
+        viewBinding = true
     }
 
     lintOptions {
