@@ -296,7 +296,7 @@ class MangaController :
         val scrolledList = binding.fullRecycler ?: binding.infoRecycler!!
         if (toolbarTextView == null) {
             toolbarTextView = (activity as? MainActivity)?.binding?.toolbar?.children
-                ?.find { it is TextView } as TextView
+                ?.find { it is TextView } as? TextView
         }
         toolbarTextView?.alpha = when {
             // Specific alpha provided
@@ -1055,6 +1055,11 @@ class MangaController :
 
     fun onChaptersDeletedError(error: Throwable) {
         Timber.e(error)
+    }
+
+    override fun startDownloadNow(position: Int) {
+        val chapter = chaptersAdapter?.getItem(position) ?: return
+        presenter.startDownloadingNow(chapter)
     }
 
     // OVERFLOW MENU DIALOGS
