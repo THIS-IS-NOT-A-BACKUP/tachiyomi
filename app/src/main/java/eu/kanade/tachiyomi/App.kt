@@ -9,6 +9,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.webkit.WebView
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.getSystemService
 import androidx.lifecycle.Lifecycle
@@ -16,7 +17,6 @@ import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.lifecycleScope
-import androidx.multidex.MultiDex
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.decode.GifDecoder
@@ -25,7 +25,9 @@ import eu.kanade.tachiyomi.data.coil.ByteBufferFetcher
 import eu.kanade.tachiyomi.data.coil.MangaCoverFetcher
 import eu.kanade.tachiyomi.data.coil.TachiyomiImageDecoder
 import eu.kanade.tachiyomi.data.notification.Notifications
+import eu.kanade.tachiyomi.data.preference.PreferenceValues
 import eu.kanade.tachiyomi.data.preference.PreferencesHelper
+import eu.kanade.tachiyomi.data.preference.asImmediateFlow
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.ui.security.SecureActivityDelegate
 import eu.kanade.tachiyomi.util.system.notification
@@ -96,11 +98,17 @@ open class App : Application(), LifecycleObserver, ImageLoaderFactory {
                 }
             }
             .launchIn(ProcessLifecycleOwner.get().lifecycleScope)
-    }
 
-    override fun attachBaseContext(base: Context) {
-        super.attachBaseContext(base)
-        MultiDex.install(this)
+        preferences.themeMode()
+            .asImmediateFlow {
+                AppCompatDelegate.setDefaultNightMode(
+                    when (it) {
+                        PreferenceValues.ThemeMode.light -> AppCompatDelegate.MODE_NIGHT_NO
+                        PreferenceValues.ThemeMode.dark -> AppCompatDelegate.MODE_NIGHT_YES
+                        PreferenceValues.ThemeMode.system -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+                    }
+                )
+            }.launchIn(ProcessLifecycleOwner.get().lifecycleScope)
     }
 
     override fun newImageLoader(): ImageLoader {
