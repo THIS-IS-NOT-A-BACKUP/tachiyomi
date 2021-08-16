@@ -78,6 +78,22 @@ class SettingsGeneralController : SettingsController() {
                 }
             }
         }
+        intListPreference {
+            key = Keys.relativeTime
+            titleRes = R.string.pref_relative_format
+            val values = arrayOf("0", "2", "7")
+            entryValues = values
+            entries = values.map {
+                when (it) {
+                    "0" -> context.getString(R.string.off)
+                    "2" -> context.getString(R.string.pref_relative_time_short)
+                    else -> context.getString(R.string.pref_relative_time_long)
+                }
+            }.toTypedArray()
+            defaultValue = "7"
+            summary = "%s"
+        }
+
         listPreference {
             key = Keys.dateFormat
             titleRes = R.string.pref_date_format
