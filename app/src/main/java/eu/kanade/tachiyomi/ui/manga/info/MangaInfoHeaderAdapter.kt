@@ -7,7 +7,6 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.RecyclerView
-import coil.loadAny
 import coil.target.ImageViewTarget
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import eu.kanade.tachiyomi.R
@@ -20,7 +19,9 @@ import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.ui.base.controller.getMainAppBarHeight
 import eu.kanade.tachiyomi.ui.manga.MangaController
+import eu.kanade.tachiyomi.util.system.applySystemAnimatorScale
 import eu.kanade.tachiyomi.util.system.copyToClipboard
+import eu.kanade.tachiyomi.util.view.loadAnyAutoPause
 import eu.kanade.tachiyomi.util.view.setChips
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.merge
@@ -47,6 +48,8 @@ class MangaInfoHeaderAdapter(
     private lateinit var binding: MangaInfoHeaderBinding
 
     private var initialLoad: Boolean = true
+
+    private val maxLines = 3
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HeaderViewHolder {
         binding = MangaInfoHeaderBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -90,6 +93,12 @@ class MangaInfoHeaderAdapter(
 
     inner class HeaderViewHolder(private val view: View) : RecyclerView.ViewHolder(view) {
         fun bind() {
+            val headerTransition = binding.root.getTransition(R.id.manga_info_header_transition)
+            headerTransition.applySystemAnimatorScale(view.context)
+
+            val summaryTransition = binding.mangaSummarySection.getTransition(R.id.manga_summary_section_transition)
+            summaryTransition.applySystemAnimatorScale(view.context)
+
             // For rounded corners
             binding.mangaCover.clipToOutline = true
 
@@ -276,8 +285,8 @@ class MangaInfoHeaderAdapter(
             setFavoriteButtonState(manga.favorite)
 
             // Set cover if changed.
-            binding.backdrop.loadAny(manga)
-            binding.mangaCover.loadAny(manga) {
+            binding.backdrop.loadAnyAutoPause(manga)
+            binding.mangaCover.loadAnyAutoPause(manga) {
                 listener(
                     onSuccess = { request, _ ->
                         (request.target as? ImageViewTarget)?.drawable?.let { drawable ->
@@ -297,7 +306,10 @@ class MangaInfoHeaderAdapter(
                 binding.mangaSummaryText.text = if (manga.description.isNullOrBlank()) {
                     view.context.getString(R.string.unknown)
                 } else {
-                    manga.description
+                    // Max lines of 3 with a blank line looks whack so we remove
+                    // any line breaks that is 2 or more and replace it with 1
+                    manga.description!!
+                        .replace(Regex("[\\r\\n]{2,}", setOf(RegexOption.MULTILINE)), "\n")
                 }
 
                 // Update genres list
@@ -335,7 +347,7 @@ class MangaInfoHeaderAdapter(
                 }
 
                 // Refreshes will change the state and it needs to be set to correct state to display correctly
-                if (binding.mangaSummaryText.maxLines == 2) {
+                if (binding.mangaSummaryText.maxLines == maxLines) {
                     binding.mangaSummarySection.transitionToState(R.id.start)
                 } else {
                     binding.mangaSummarySection.transitionToState(R.id.end)
@@ -348,7 +360,7 @@ class MangaInfoHeaderAdapter(
         }
 
         private fun toggleMangaInfo() {
-            val isCurrentlyExpanded = binding.mangaSummaryText.maxLines != 2
+            val isCurrentlyExpanded = binding.mangaSummaryText.maxLines != maxLines
 
             if (isCurrentlyExpanded) {
                 binding.mangaSummarySection.transitionToStart()
@@ -357,7 +369,7 @@ class MangaInfoHeaderAdapter(
             }
 
             binding.mangaSummaryText.maxLines = if (isCurrentlyExpanded) {
-                2
+                maxLines
             } else {
                 Int.MAX_VALUE
             }
