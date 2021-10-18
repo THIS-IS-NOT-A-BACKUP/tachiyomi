@@ -119,7 +119,7 @@
     <string name="action_reset">Reset</string>
     <string name="action_undo">Undo</string>
     <string name="action_open_log">Open log</string>
-    <string name="action_show_errors">Show errors</string>
+    <string name="action_show_errors">See full error details</string>
     <string name="action_create">Create</string>
     <string name="action_restore">Restore</string>
     <string name="action_webview_back">Back</string>
@@ -211,13 +211,11 @@
     <string name="pref_category_library_update">Global update</string>
     <string name="pref_library_update_interval">Update frequency</string>
     <string name="update_never">Manual</string>
-    <string name="update_3hour">Every 3 hours</string>
-    <string name="update_4hour">Every 4 hours</string>
     <string name="update_6hour">Every 6 hours</string>
-    <string name="update_8hour">Every 8 hours</string>
     <string name="update_12hour">Every 12 hours</string>
     <string name="update_24hour">Daily</string>
     <string name="update_48hour">Every 2 days</string>
+    <string name="update_72hour">Every 3 days</string>
     <string name="update_weekly">Weekly</string>
     <string name="pref_library_update_prioritization">Update order</string>
     <string name="pref_library_update_restriction">Update restrictions</string>
@@ -703,11 +701,12 @@
     <!-- Downloads activity and service -->
     <string name="download_queue_error">Couldn\'t download chapters. You can try again in the downloads section</string>
     <string name="download_insufficient_space">Couldn\'t download chapters due to low storage space</string>
+    <string name="download_queue_size_warning">Warning: large bulk downloads may lead to sources becoming slower and/or blocking Tachiyomi</string>
 
     <!-- Library update service notifications -->
     <string name="notification_check_updates">Checking for new chapters</string>
     <string name="notification_updating">Updating library… (%1$d/%2$d)</string>
-    <string name="notification_size_warning">Large updates may lead to increased battery usage and sources becoming slower</string>
+    <string name="notification_size_warning">Warning: large updates harm sources and may lead to slower updates and also increased battery usage</string>
     <string name="notification_new_chapters">New chapters found</string>
     <plurals name="notification_new_chapters_summary">
         <item quantity="one">For 1 title</item>
