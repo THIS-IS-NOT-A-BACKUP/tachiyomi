@@ -28,7 +28,6 @@ android {
         applicationId = "eu.kanade.tachiyomi"
         minSdk = AndroidConfig.minSdk
         targetSdk = AndroidConfig.targetSdk
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         versionCode = 71
         versionName = "0.12.3"
 
@@ -44,6 +43,8 @@ android {
         ndk {
             abiFilters += SUPPORTED_ABIS
         }
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     splits {
@@ -112,6 +113,11 @@ android {
 
     buildFeatures {
         viewBinding = true
+
+        // Disable some unused things
+        aidl = false
+        renderScript = false
+        shaders = false
     }
 
     lint {
@@ -141,10 +147,10 @@ dependencies {
     implementation("org.tachiyomi:source-api:1.1")
 
     // AndroidX libraries
-    implementation("androidx.annotation:annotation:1.3.0-rc01")
+    implementation("androidx.annotation:annotation:1.3.0")
     implementation("androidx.appcompat:appcompat:1.4.0-rc01")
     implementation("androidx.biometric:biometric-ktx:1.2.0-alpha03")
-    implementation("androidx.browser:browser:1.4.0-rc01")
+    implementation("androidx.browser:browser:1.4.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.1")
     implementation("androidx.coordinatorlayout:coordinatorlayout:1.1.0")
     implementation("androidx.core:core-ktx:1.7.0")
@@ -172,7 +178,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:$okhttpVersion")
     implementation("com.squareup.okhttp3:logging-interceptor:$okhttpVersion")
     implementation("com.squareup.okhttp3:okhttp-dnsoverhttps:$okhttpVersion")
-    implementation("com.squareup.okio:okio:2.10.0")
+    implementation("com.squareup.okio:okio:3.0.0")
 
     // TLS 1.3 support for Android < 10
     implementation("org.conscrypt:conscrypt-android:2.5.2")
@@ -259,7 +265,7 @@ dependencies {
 
     // Crash reports/analytics
     implementation("ch.acra:acra-http:5.8.1")
-    "standardImplementation"("com.google.firebase:firebase-analytics:19.0.2")
+    "standardImplementation"("com.google.firebase:firebase-analytics-ktx:20.0.0")
 
     // Licenses
     implementation("com.mikepenz:aboutlibraries-core:${BuildPluginsVersion.ABOUTLIB_PLUGIN}")
