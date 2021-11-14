@@ -131,7 +131,7 @@
 
         <!-- Smaller text/height -->
         <item name="chipMinHeight">24dp</item>
-        <item name="android:textAppearance">?attr/textAppearanceCaption</item>
+        <item name="android:textAppearance">?attr/textAppearanceBodySmall</item>
 
         <!-- Collapse horizontal margin -->
         <item name="chipMinTouchTargetSize">30dp</item>
@@ -176,9 +176,6 @@
     <!--=================-->
     <style name="Widget.Tachiyomi.TabLayout" parent="Widget.Material3.TabLayout">
         <item name="tabGravity">center</item>
-        <item name="tabIndicator">@drawable/tab_indicator</item>
-        <item name="tabIndicatorFullWidth">false</item>
-        <item name="tabIndicatorHeight">3dp</item>
         <item name="tabInlineLabel">true</item>
         <item name="tabMinWidth">75dp</item>
         <item name="tabMode">scrollable</item>
@@ -267,7 +264,7 @@
     <!--Preferences-->
     <!--===========-->
     <style name="PreferenceThemeOverlay.Tachiyomi">
-        <item name="preferenceCategoryTitleTextAppearance">?attr/textAppearanceBody2</item>
+        <item name="preferenceCategoryTitleTextAppearance">?attr/textAppearanceBodyMedium</item>
         <item name="switchPreferenceCompatStyle">@style/PreferenceThemeOverlay.Tachiyomi.SwitchPreferenceCompat</item>
     </style>
 
