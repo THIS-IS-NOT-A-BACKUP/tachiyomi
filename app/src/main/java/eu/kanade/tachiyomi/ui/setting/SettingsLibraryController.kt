@@ -5,16 +5,18 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import androidx.core.content.ContextCompat
 import androidx.core.text.buildSpannedString
+import androidx.preference.Preference
 import androidx.preference.PreferenceScreen
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.database.DatabaseHelper
 import eu.kanade.tachiyomi.data.database.models.Category
 import eu.kanade.tachiyomi.data.library.LibraryUpdateJob
-import eu.kanade.tachiyomi.data.preference.CHARGING
-import eu.kanade.tachiyomi.data.preference.ONLY_ON_WIFI
+import eu.kanade.tachiyomi.data.preference.DEVICE_CHARGING
+import eu.kanade.tachiyomi.data.preference.DEVICE_ONLY_ON_WIFI
+import eu.kanade.tachiyomi.data.preference.MANGA_FULLY_READ
+import eu.kanade.tachiyomi.data.preference.MANGA_ONGOING
 import eu.kanade.tachiyomi.data.preference.PreferencesHelper
-import eu.kanade.tachiyomi.data.preference.asImmediateFlow
 import eu.kanade.tachiyomi.data.track.TrackManager
 import eu.kanade.tachiyomi.databinding.PrefLibraryColumnsBinding
 import eu.kanade.tachiyomi.ui.base.controller.DialogController
@@ -156,14 +158,13 @@ class SettingsLibraryController : SettingsController() {
                 }
             }
             multiSelectListPreference {
-                key = Keys.libraryUpdateRestriction
+                key = Keys.libraryUpdateDeviceRestriction
                 titleRes = R.string.pref_library_update_restriction
                 entriesRes = arrayOf(R.string.connected_to_wifi, R.string.charging)
-                entryValues = arrayOf(ONLY_ON_WIFI, CHARGING)
-                defaultValue = setOf(ONLY_ON_WIFI)
+                entryValues = arrayOf(DEVICE_ONLY_ON_WIFI, DEVICE_CHARGING)
+                defaultValue = preferences.libraryUpdateDeviceRestriction().defaultValue
 
-                preferences.libraryUpdateInterval().asImmediateFlow { isVisible = it > 0 }
-                    .launchIn(viewScope)
+                visibleIfGlobalUpdateEnabled()
 
                 onChange {
                     // Post to event looper to allow the preference to be updated.
@@ -172,12 +173,12 @@ class SettingsLibraryController : SettingsController() {
                 }
 
                 fun updateSummary() {
-                    val restrictions = preferences.libraryUpdateRestriction().get()
+                    val restrictions = preferences.libraryUpdateDeviceRestriction().get()
                         .sorted()
                         .map {
                             when (it) {
-                                ONLY_ON_WIFI -> context.getString(R.string.connected_to_wifi)
-                                CHARGING -> context.getString(R.string.charging)
+                                DEVICE_ONLY_ON_WIFI -> context.getString(R.string.connected_to_wifi)
+                                DEVICE_CHARGING -> context.getString(R.string.charging)
                                 else -> it
                             }
                         }
@@ -190,18 +191,48 @@ class SettingsLibraryController : SettingsController() {
                     summary = context.getString(R.string.restrictions, restrictionsText)
                 }
 
-                preferences.libraryUpdateRestriction().asFlow()
+                preferences.libraryUpdateDeviceRestriction().asFlow()
                     .onEach { updateSummary() }
                     .launchIn(viewScope)
             }
-            switchPreference {
-                key = Keys.updateOnlyNonCompleted
-                titleRes = R.string.pref_update_only_non_completed
-                defaultValue = true
+            multiSelectListPreference {
+                key = Keys.libraryUpdateMangaRestriction
+                titleRes = R.string.pref_library_update_manga_restriction
+                entriesRes = arrayOf(R.string.pref_update_only_completely_read, R.string.pref_update_only_non_completed)
+                entryValues = arrayOf(MANGA_FULLY_READ, MANGA_ONGOING)
+                defaultValue = preferences.libraryUpdateMangaRestriction().defaultValue
+
+                visibleIfGlobalUpdateEnabled()
+
+                fun updateSummary() {
+                    val restrictions = preferences.libraryUpdateMangaRestriction().get()
+                        .sorted()
+                        .map {
+                            when (it) {
+                                MANGA_ONGOING -> context.getString(R.string.pref_update_only_non_completed)
+                                MANGA_FULLY_READ -> context.getString(R.string.pref_update_only_completely_read)
+                                else -> it
+                            }
+                        }
+                    val restrictionsText = if (restrictions.isEmpty()) {
+                        context.getString(R.string.none)
+                    } else {
+                        restrictions.joinToString()
+                    }
+
+                    summary = context.getString(R.string.restrictions, restrictionsText)
+                }
+
+                preferences.libraryUpdateMangaRestriction().asFlow()
+                    .onEach { updateSummary() }
+                    .launchIn(viewScope)
             }
             preference {
                 key = Keys.libraryUpdateCategories
                 titleRes = R.string.categories
+
+                visibleIfGlobalUpdateEnabled()
+
                 onClick {
                     LibraryGlobalUpdateCategoriesDialog().showDialog(router)
                 }
@@ -239,37 +270,12 @@ class SettingsLibraryController : SettingsController() {
                     .onEach { updateSummary() }
                     .launchIn(viewScope)
             }
-            intListPreference {
-                key = Keys.libraryUpdatePrioritization
-                titleRes = R.string.pref_library_update_prioritization
-
-                // The following array lines up with the list rankingScheme in:
-                // ../../data/library/LibraryUpdateRanker.kt
-                val priorities = arrayOf(
-                    Pair("0", R.string.action_sort_alpha),
-                    Pair("1", R.string.action_sort_last_checked),
-                    Pair("2", R.string.action_sort_next_updated)
-                )
-                val defaultPriority = priorities[0]
-
-                entriesRes = priorities.map { it.second }.toTypedArray()
-                entryValues = priorities.map { it.first }.toTypedArray()
-                defaultValue = defaultPriority.first
-
-                val selectedPriority = priorities.find { it.first.toInt() == preferences.libraryUpdatePrioritization().get() }
-                summaryRes = selectedPriority?.second ?: defaultPriority.second
-                onChange { newValue ->
-                    summaryRes = priorities.find {
-                        it.first == (newValue as String)
-                    }?.second ?: defaultPriority.second
-                    true
-                }
-            }
             switchPreference {
                 key = Keys.autoUpdateMetadata
                 titleRes = R.string.pref_library_update_refresh_metadata
                 summaryRes = R.string.pref_library_update_refresh_metadata_summary
                 defaultValue = false
+                visibleIfGlobalUpdateEnabled()
             }
             if (trackManager.hasLoggedServices()) {
                 switchPreference {
@@ -277,9 +283,14 @@ class SettingsLibraryController : SettingsController() {
                     titleRes = R.string.pref_library_update_refresh_trackers
                     summaryRes = R.string.pref_library_update_refresh_trackers_summary
                     defaultValue = false
+                    visibleIfGlobalUpdateEnabled()
                 }
             }
         }
+    }
+
+    private inline fun Preference.visibleIfGlobalUpdateEnabled() {
+        visibleIf(preferences.libraryUpdateInterval()) { it > 0 }
     }
 
     class LibraryColumnsDialog : DialogController() {
