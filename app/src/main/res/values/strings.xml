@@ -561,6 +561,9 @@
     <string name="unknown_author">Unknown author</string>
     <string name="unknown_status">Unknown status</string>
     <string name="licensed">Licensed</string>
+    <string name="publishing_finished">Publishing finished</string>
+    <string name="cancelled">Cancelled</string>
+    <string name="on_hiatus">On hiatus</string>
     <string name="add_to_library">Add to library</string>
     <string name="in_library">In library</string>
     <string name="remove_from_library">Remove from library</string>
@@ -626,13 +629,11 @@
     <string name="add_tracking">Add tracking</string>
     <string name="unread">Unread</string>
     <string name="reading">Reading</string>
-    <string name="currently_reading">Currently reading</string>
     <string name="completed">Completed</string>
     <string name="dropped">Dropped</string>
     <string name="on_hold">On hold</string>
     <string name="paused">Paused</string>
     <string name="plan_to_read">Plan to read</string>
-    <string name="want_to_read">Want to read</string>
     <string name="repeating">Rereading</string>
     <string name="score">Score</string>
     <string name="title">Title</string>
