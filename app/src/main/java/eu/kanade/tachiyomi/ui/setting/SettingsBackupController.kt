@@ -20,6 +20,7 @@ import eu.kanade.tachiyomi.data.backup.BackupConst
 import eu.kanade.tachiyomi.data.backup.BackupCreateService
 import eu.kanade.tachiyomi.data.backup.BackupCreatorJob
 import eu.kanade.tachiyomi.data.backup.BackupRestoreService
+import eu.kanade.tachiyomi.data.backup.ValidatorParseException
 import eu.kanade.tachiyomi.data.backup.full.FullBackupRestoreValidator
 import eu.kanade.tachiyomi.data.backup.full.models.BackupFull
 import eu.kanade.tachiyomi.data.backup.legacy.LegacyBackupRestoreValidator
@@ -162,39 +163,33 @@ class SettingsBackupController : SettingsController() {
             val activity = activity ?: return
             val uri = data.data
 
+            if (uri == null) {
+                activity.toast(R.string.backup_restore_invalid_uri)
+                return
+            }
+
             when (requestCode) {
                 CODE_BACKUP_DIR -> {
                     // Get UriPermission so it's possible to write files
                     val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
                         Intent.FLAG_GRANT_WRITE_URI_PERMISSION
 
-                    if (uri != null) {
-                        activity.contentResolver.takePersistableUriPermission(uri, flags)
-                    }
-
-                    // Set backup Uri
+                    activity.contentResolver.takePersistableUriPermission(uri, flags)
                     preferences.backupsDirectory().set(uri.toString())
                 }
                 CODE_BACKUP_CREATE -> {
                     val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
                         Intent.FLAG_GRANT_WRITE_URI_PERMISSION
 
-                    if (uri != null) {
-                        activity.contentResolver.takePersistableUriPermission(uri, flags)
-                    }
-
-                    val file = UniFile.fromUri(activity, uri)
-
-                    activity.toast(R.string.creating_backup)
-
+                    activity.contentResolver.takePersistableUriPermission(uri, flags)
                     BackupCreateService.start(
                         activity,
-                        file.uri,
+                        uri,
                         backupFlags,
                     )
                 }
                 CODE_BACKUP_RESTORE -> {
-                    uri?.let { RestoreBackupDialog(it).showDialog(router) }
+                    RestoreBackupDialog(uri).showDialog(router)
                 }
             }
         }
@@ -268,12 +263,12 @@ class SettingsBackupController : SettingsController() {
 
             return try {
                 var type = BackupConst.BACKUP_TYPE_FULL
-                val results = runCatching {
+                val results = try {
                     FullBackupRestoreValidator().validate(activity, uri)
-                }.recoverCatching {
+                } catch (_: ValidatorParseException) {
                     type = BackupConst.BACKUP_TYPE_LEGACY
                     LegacyBackupRestoreValidator().validate(activity, uri)
-                }.getOrThrow()
+                }
 
                 var message = if (type == BackupConst.BACKUP_TYPE_FULL) {
                     activity.getString(R.string.backup_restore_content_full)
