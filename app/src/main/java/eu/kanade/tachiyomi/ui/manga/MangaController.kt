@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -890,15 +891,20 @@ class MangaController :
 
     private fun openChapter(chapter: Chapter, sharedElement: View? = null) {
         val activity = activity ?: return
-        val intent = ReaderActivity.newIntent(activity, presenter.manga, chapter)
         activity.apply {
-            if (sharedElement != null) {
+            val intent = ReaderActivity.newIntent(activity, presenter.manga, chapter)
+            if (sharedElement != null && Build.VERSION.SDK_INT != Build.VERSION_CODES.O) {
                 val activityOptions = ActivityOptions.makeSceneTransitionAnimation(
                     activity,
                     sharedElement,
                     ReaderActivity.SHARED_ELEMENT_NAME
                 )
-                startActivity(intent, activityOptions.toBundle())
+                startActivity(
+                    intent.apply {
+                        putExtra(ReaderActivity.EXTRA_IS_TRANSITION, true)
+                    },
+                    activityOptions.toBundle(),
+                )
             } else {
                 startActivity(intent)
             }
