@@ -12,6 +12,7 @@ import java.net.InetAddress
 const val PREF_DOH_CLOUDFLARE = 1
 const val PREF_DOH_GOOGLE = 2
 const val PREF_DOH_ADGUARD = 3
+const val PREF_DOH_QUAD9 = 4
 
 fun OkHttpClient.Builder.dohCloudflare() = dns(
     DnsOverHttps.Builder().client(build())
@@ -25,7 +26,7 @@ fun OkHttpClient.Builder.dohCloudflare() = dns(
             InetAddress.getByName("2606:4700:4700::1111"),
             InetAddress.getByName("2606:4700:4700::1001"),
             InetAddress.getByName("2606:4700:4700::0064"),
-            InetAddress.getByName("2606:4700:4700::6400")
+            InetAddress.getByName("2606:4700:4700::6400"),
         )
         .build()
 )
@@ -35,12 +36,15 @@ fun OkHttpClient.Builder.dohGoogle() = dns(
         .url("https://dns.google/dns-query".toHttpUrl())
         .bootstrapDnsHosts(
             InetAddress.getByName("8.8.4.4"),
-            InetAddress.getByName("8.8.8.8")
+            InetAddress.getByName("8.8.8.8"),
+            InetAddress.getByName("2001:4860:4860::8888"),
+            InetAddress.getByName("2001:4860:4860::8844"),
         )
         .build()
 )
 
-// AdGuard "Default" DNS works too but for the sake of making sure no site is blacklisted, i picked "Unfiltered"
+// AdGuard "Default" DNS works too but for the sake of making sure no site is blacklisted,
+// we use "Unfiltered"
 fun OkHttpClient.Builder.dohAdGuard() = dns(
     DnsOverHttps.Builder().client(build())
         .url("https://dns-unfiltered.adguard.com/dns-query".toHttpUrl())
@@ -49,6 +53,18 @@ fun OkHttpClient.Builder.dohAdGuard() = dns(
             InetAddress.getByName("94.140.14.141"),
             InetAddress.getByName("2a10:50c0::1:ff"),
             InetAddress.getByName("2a10:50c0::2:ff"),
+        )
+        .build()
+)
+
+fun OkHttpClient.Builder.dohQuad9() = dns(
+    DnsOverHttps.Builder().client(build())
+        .url("https://dns.quad9.net/dns-query".toHttpUrl())
+        .bootstrapDnsHosts(
+            InetAddress.getByName("9.9.9.9"),
+            InetAddress.getByName("149.112.112.112"),
+            InetAddress.getByName("2620:fe::fe"),
+            InetAddress.getByName("2620:fe::9"),
         )
         .build()
 )
