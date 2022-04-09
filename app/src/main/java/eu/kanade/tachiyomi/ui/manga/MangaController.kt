@@ -121,8 +121,8 @@ class MangaController :
     constructor(manga: Manga?, fromSource: Boolean = false) : super(
         bundleOf(
             MANGA_EXTRA to (manga?.id ?: 0),
-            FROM_SOURCE_EXTRA to fromSource
-        )
+            FROM_SOURCE_EXTRA to fromSource,
+        ),
     ) {
         this.manga = manga
         if (manga != null) {
@@ -131,7 +131,7 @@ class MangaController :
     }
 
     constructor(mangaId: Long) : this(
-        Injekt.get<DatabaseHelper>().getManga(mangaId).executeAsBlocking()
+        Injekt.get<DatabaseHelper>().getManga(mangaId).executeAsBlocking(),
     )
 
     @Suppress("unused")
@@ -222,7 +222,7 @@ class MangaController :
     override fun createPresenter(): MangaPresenter {
         return MangaPresenter(
             manga!!,
-            source!!
+            source!!,
         )
     }
 
@@ -268,7 +268,7 @@ class MangaController :
                     val mainActivityAppBar = (activity as? MainActivity)?.binding?.appbar
                     (it.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(
                         1,
-                        mainActivityAppBar?.height ?: 0
+                        mainActivityAppBar?.height ?: 0,
                     )
                     mainActivityAppBar?.isLifted = true
                 }
@@ -425,7 +425,7 @@ class MangaController :
         when (item.itemId) {
             R.id.action_share -> shareManga()
             R.id.download_next, R.id.download_next_5, R.id.download_next_10,
-            R.id.download_custom, R.id.download_unread, R.id.download_all
+            R.id.download_custom, R.id.download_unread, R.id.download_all,
             -> downloadChapters(item.itemId)
 
             R.id.action_edit_categories -> onCategoriesClick()
@@ -545,11 +545,11 @@ class MangaController :
             val source = sourceManager.getOrStub(libraryManga.source)
             MaterialAlertDialogBuilder(it).apply {
                 setMessage(activity?.getString(R.string.confirm_manga_add_duplicate, source.name))
-                setPositiveButton(activity?.getString(R.string.action_add)) { _, _, ->
+                setPositiveButton(activity?.getString(R.string.action_add)) { _, _ ->
                     addToLibrary(newManga)
                 }
-                setNegativeButton(activity?.getString(R.string.action_cancel)) { _, _, -> }
-                setNeutralButton(activity?.getString(R.string.action_show_manga)) { _, _, ->
+                setNegativeButton(activity?.getString(R.string.action_cancel)) { _, _ -> }
+                setNeutralButton(activity?.getString(R.string.action_show_manga)) { _, _ ->
                     router.pushController(MangaController(libraryManga).withFadeTransaction())
                 }
                 setCancelable(true)
@@ -661,7 +661,7 @@ class MangaController :
                     super.postDestroy(controller)
                     dialog = null
                 }
-            }
+            },
         )
         dialog?.showDialog(router)
     }
@@ -703,7 +703,7 @@ class MangaController :
                 previousController.search(query)
             }
             is UpdatesController,
-            is HistoryController -> {
+            is HistoryController, -> {
                 // Manually navigate to LibraryController
                 router.handleBack()
                 (router.activity as MainActivity).setSelectedNavItem(R.id.nav_library)
@@ -770,7 +770,7 @@ class MangaController :
                     super.postDestroy(controller)
                     dialog = null
                 }
-            }
+            },
         )
         dialog?.showDialog(router)
     }
@@ -785,8 +785,8 @@ class MangaController :
                         image = Image.Cover(
                             bitmap = coverBitmap,
                             name = manga.title,
-                            location = Location.Cache
-                        )
+                            location = Location.Cache,
+                        ),
                     )
                     launchUI {
                         startActivity(uri.toShareIntent(activity))
@@ -809,8 +809,8 @@ class MangaController :
                         image = Image.Cover(
                             bitmap = coverBitmap,
                             name = manga.title,
-                            location = Location.Pictures.create()
-                        )
+                            location = Location.Pictures.create(),
+                        ),
                     )
                     launchUI {
                         activity.toast(R.string.cover_saved)
@@ -840,9 +840,9 @@ class MangaController :
             startActivityForResult(
                 Intent.createChooser(
                     intent,
-                    resources?.getString(R.string.file_select_cover)
+                    resources?.getString(R.string.file_select_cover),
                 ),
-                REQUEST_IMAGE_OPEN
+                REQUEST_IMAGE_OPEN,
             )
         } else {
             activity?.toast(R.string.notification_first_add_to_library)
@@ -954,7 +954,7 @@ class MangaController :
                 val activityOptions = ActivityOptions.makeSceneTransitionAnimation(
                     activity,
                     sharedElement,
-                    ReaderActivity.SHARED_ELEMENT_NAME
+                    ReaderActivity.SHARED_ELEMENT_NAME,
                 )
                 startActivity(
                     intent.apply {
@@ -1259,7 +1259,7 @@ class MangaController :
     private fun showCustomDownloadDialog() {
         DownloadCustomChaptersDialog(
             this,
-            presenter.allChapters.size
+            presenter.allChapters.size,
         ).showDialog(router)
     }
 

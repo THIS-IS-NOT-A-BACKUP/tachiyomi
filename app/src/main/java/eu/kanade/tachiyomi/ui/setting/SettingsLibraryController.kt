@@ -145,7 +145,7 @@ class SettingsLibraryController : SettingsController() {
                     R.string.update_24hour,
                     R.string.update_48hour,
                     R.string.update_72hour,
-                    R.string.update_weekly
+                    R.string.update_weekly,
                 )
                 entryValues = arrayOf("0", "12", "24", "48", "72", "168")
                 summary = "%s"
@@ -342,9 +342,11 @@ class SettingsLibraryController : SettingsController() {
                 .map {
                     when (it.id.toString()) {
                         in preferences.libraryUpdateCategories()
-                            .get() -> QuadStateTextView.State.CHECKED.ordinal
+                            .get(),
+                        -> QuadStateTextView.State.CHECKED.ordinal
                         in preferences.libraryUpdateCategoriesExclude()
-                            .get() -> QuadStateTextView.State.INVERSED.ordinal
+                            .get(),
+                        -> QuadStateTextView.State.INVERSED.ordinal
                         else -> QuadStateTextView.State.UNCHECKED.ordinal
                     }
                 }
@@ -355,7 +357,7 @@ class SettingsLibraryController : SettingsController() {
                 .setQuadStateMultiChoiceItems(
                     message = R.string.pref_library_update_categories_details,
                     items = items,
-                    initialSelected = selected
+                    initialSelected = selected,
                 ) { selections ->
                     selected = selections
                 }

@@ -1,12 +1,8 @@
 package eu.kanade.tachiyomi.ui.manga
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
-import coil.imageLoader
-import coil.memory.MemoryCache
 import com.jakewharton.rxrelay.PublishRelay
 import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.database.DatabaseHelper
@@ -66,7 +62,7 @@ class MangaPresenter(
     private val db: DatabaseHelper = Injekt.get(),
     private val trackManager: TrackManager = Injekt.get(),
     private val downloadManager: DownloadManager = Injekt.get(),
-    private val coverCache: CoverCache = Injekt.get()
+    private val coverCache: CoverCache = Injekt.get(),
 ) : BasePresenter<MangaController>() {
 
     /**
@@ -141,7 +137,7 @@ class MangaPresenter(
                     filteredAndSortedChapters = chapters
                     view?.onNextChapters(chapters)
                 },
-                { _, error -> logcat(LogPriority.ERROR, error) }
+                { _, error -> logcat(LogPriority.ERROR, error) },
             )
 
         // Manga info - end
@@ -166,7 +162,7 @@ class MangaPresenter(
                     // Listen for download status changes
                     observeDownloads()
                 }
-                .subscribe { chaptersRelay.call(it) }
+                .subscribe { chaptersRelay.call(it) },
         )
 
         // Chapters list - end
@@ -296,54 +292,12 @@ class MangaPresenter(
     }
 
     /**
-     * Get the manga cover as a Bitmap, either from the CoverCache (only works for library manga)
-     * or from the Coil ImageLoader cache.
-     *
-     * @param context the context used to get the Coil ImageLoader
-     * @param memoryCacheKey Coil MemoryCache.Key that points to the cover Bitmap cache location
-     * @return manga cover as Bitmap
-     */
-    fun getCoverBitmap(context: Context, memoryCacheKey: MemoryCache.Key?): Bitmap {
-        var resultBitmap = coverBitmapFromCoverCache()
-        if (resultBitmap == null && memoryCacheKey != null) {
-            resultBitmap = coverBitmapFromImageLoader(context, memoryCacheKey)
-        }
-
-        return resultBitmap ?: throw Exception("Cover not in cache")
-    }
-
-    /**
-     * Attempt manga cover retrieval from the CoverCache.
-     *
-     * @return cover as Bitmap or null if CoverCache does not contain cover for manga
-     */
-    private fun coverBitmapFromCoverCache(): Bitmap? {
-        val cover = coverCache.getCoverFile(manga)
-        return if (cover != null) {
-            BitmapFactory.decodeFile(cover.path)
-        } else {
-            null
-        }
-    }
-
-    /**
-     * Attempt manga cover retrieval from the Coil ImageLoader memoryCache.
-     *
-     * @param context the context used to get the Coil ImageLoader
-     * @param memoryCacheKey Coil MemoryCache.Key that points to the cover Bitmap cache location
-     * @return cover as Bitmap or null if there is no thumbnail cached with the memoryCacheKey
-     */
-    private fun coverBitmapFromImageLoader(context: Context, memoryCacheKey: MemoryCache.Key): Bitmap? {
-        return context.imageLoader.memoryCache?.get(memoryCacheKey)?.bitmap
-    }
-
-    /**
      * Save manga cover Bitmap to picture or temporary share directory.
      *
      * @param image the image with specified location
      * @return flow Flow which emits the Uri which specifies where the image is saved when
      */
-    suspend fun saveImage(image: Image): Uri {
+    fun saveImage(image: Image): Uri {
         return imageSaver.save(image)
     }
 
@@ -374,7 +328,7 @@ class MangaPresenter(
             .observeOn(AndroidSchedulers.mainThread())
             .subscribeFirst(
                 { view, _ -> view.onSetCoverSuccess() },
-                { view, e -> view.onSetCoverError(e) }
+                { view, e -> view.onSetCoverError(e) },
             )
     }
 
@@ -389,7 +343,7 @@ class MangaPresenter(
             .observeOn(AndroidSchedulers.mainThread())
             .subscribeFirst(
                 { view, _ -> view.onSetCoverSuccess() },
-                { view, e -> view.onSetCoverError(e) }
+                { view, e -> view.onSetCoverError(e) },
             )
     }
 
@@ -411,7 +365,7 @@ class MangaPresenter(
                 },
                 { _, error ->
                     logcat(LogPriority.ERROR, error)
-                }
+                },
             )
 
         observeDownloadsPageSubscription?.let { remove(it) }

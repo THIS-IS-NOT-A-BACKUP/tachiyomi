@@ -51,7 +51,7 @@ import java.util.concurrent.TimeUnit
 
 class LibraryController(
     bundle: Bundle? = null,
-    private val preferences: PreferencesHelper = Injekt.get()
+    private val preferences: PreferencesHelper = Injekt.get(),
 ) : SearchableNucleusController<LibraryControllerBinding, LibraryPresenter>(bundle),
     RootController,
     TabbedController,
@@ -211,7 +211,7 @@ class LibraryController(
         binding.btnGlobalSearch.clicks()
             .onEach {
                 router.pushController(
-                    GlobalSearchController(presenter.query).withFadeTransaction()
+                    GlobalSearchController(presenter.query).withFadeTransaction(),
                 )
             }
             .launchIn(viewScope)
@@ -281,7 +281,7 @@ class LibraryController(
                 listOf(
                     EmptyView.Action(R.string.getting_started_guide, R.drawable.ic_help_24dp) {
                         activity?.openInBrowser("https://tachiyomi.org/help/guides/getting-started")
-                    }
+                    },
                 ),
             )
             (activity as? MainActivity)?.ready = true

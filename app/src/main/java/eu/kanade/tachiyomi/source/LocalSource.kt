@@ -314,7 +314,7 @@ class LocalSource(private val context: Context) : CatalogueSource, UnmeteredSour
     private class OrderBy(context: Context) : Filter.Sort(
         context.getString(R.string.local_filter_order_by),
         arrayOf(context.getString(R.string.title), context.getString(R.string.date)),
-        Selection(0, true)
+        Selection(0, true),
     )
 
     sealed class Format {
