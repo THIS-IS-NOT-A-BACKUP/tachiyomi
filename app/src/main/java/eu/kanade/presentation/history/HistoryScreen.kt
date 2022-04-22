@@ -1,6 +1,7 @@
 package eu.kanade.presentation.history
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -38,17 +39,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.text.buildSpannedString
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.items
+import eu.kanade.domain.history.model.HistoryWithRelations
 import eu.kanade.presentation.components.EmptyScreen
 import eu.kanade.presentation.components.MangaCover
 import eu.kanade.presentation.components.MangaCoverAspect
-import eu.kanade.presentation.theme.TachiyomiTheme
 import eu.kanade.presentation.util.horizontalPadding
 import eu.kanade.tachiyomi.R
-import eu.kanade.tachiyomi.data.database.models.MangaChapterHistory
 import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.ui.recent.history.HistoryPresenter
 import eu.kanade.tachiyomi.ui.recent.history.UiModel
@@ -59,44 +58,36 @@ import uy.kohesive.injekt.api.get
 import java.text.DateFormat
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
-import java.util.*
-
-val chapterFormatter = DecimalFormat(
-    "#.###",
-    DecimalFormatSymbols()
-        .apply { decimalSeparator = '.' },
-)
+import java.util.Date
 
 @Composable
 fun HistoryScreen(
     composeView: ComposeView,
     presenter: HistoryPresenter,
-    onClickItem: (MangaChapterHistory) -> Unit,
-    onClickResume: (MangaChapterHistory) -> Unit,
-    onClickDelete: (MangaChapterHistory, Boolean) -> Unit,
+    onClickItem: (HistoryWithRelations) -> Unit,
+    onClickResume: (HistoryWithRelations) -> Unit,
+    onClickDelete: (HistoryWithRelations, Boolean) -> Unit,
 ) {
-    val nestedSrollInterop = rememberNestedScrollInteropConnection(composeView)
-    TachiyomiTheme {
-        val state by presenter.state.collectAsState()
-        val history = state.list?.collectAsLazyPagingItems()
-        when {
-            history == null -> {
-                CircularProgressIndicator()
-            }
-            history.itemCount == 0 -> {
-                EmptyScreen(
-                    textResource = R.string.information_no_recent_manga
-                )
-            }
-            else -> {
-                HistoryContent(
-                    nestedScroll = nestedSrollInterop,
-                    history = history,
-                    onClickItem = onClickItem,
-                    onClickResume = onClickResume,
-                    onClickDelete = onClickDelete,
-                )
-            }
+    val nestedScrollInterop = rememberNestedScrollInteropConnection(composeView)
+    val state by presenter.state.collectAsState()
+    val history = state.list?.collectAsLazyPagingItems()
+    when {
+        history == null -> {
+            CircularProgressIndicator()
+        }
+        history.itemCount == 0 -> {
+            EmptyScreen(
+                textResource = R.string.information_no_recent_manga
+            )
+        }
+        else -> {
+            HistoryContent(
+                nestedScroll = nestedScrollInterop,
+                history = history,
+                onClickItem = onClickItem,
+                onClickResume = onClickResume,
+                onClickDelete = onClickDelete,
+            )
         }
     }
 }
@@ -104,16 +95,16 @@ fun HistoryScreen(
 @Composable
 fun HistoryContent(
     history: LazyPagingItems<UiModel>,
-    onClickItem: (MangaChapterHistory) -> Unit,
-    onClickResume: (MangaChapterHistory) -> Unit,
-    onClickDelete: (MangaChapterHistory, Boolean) -> Unit,
+    onClickItem: (HistoryWithRelations) -> Unit,
+    onClickResume: (HistoryWithRelations) -> Unit,
+    onClickDelete: (HistoryWithRelations, Boolean) -> Unit,
     preferences: PreferencesHelper = Injekt.get(),
     nestedScroll: NestedScrollConnection
 ) {
     val relativeTime: Int = remember { preferences.relativeTime().get() }
     val dateFormat: DateFormat = remember { preferences.dateFormat() }
 
-    val (removeState, setRemoveState) = remember { mutableStateOf<MangaChapterHistory?>(null) }
+    val (removeState, setRemoveState) = remember { mutableStateOf<HistoryWithRelations?>(null) }
 
     val scrollState = rememberLazyListState()
     LazyColumn(
@@ -132,7 +123,7 @@ fun HistoryContent(
                         dateFormat = dateFormat
                     )
                 }
-                is UiModel.History -> {
+                is UiModel.Item -> {
                     val value = item.item
                     HistoryItem(
                         modifier = Modifier.animateItemPlacement(),
@@ -146,10 +137,7 @@ fun HistoryContent(
             }
         }
         item {
-            Spacer(
-                modifier = Modifier
-                    .navigationBarsPadding()
-            )
+            Spacer(Modifier.navigationBarsPadding())
         }
     }
 
@@ -189,7 +177,7 @@ fun HistoryHeader(
 @Composable
 fun HistoryItem(
     modifier: Modifier = Modifier,
-    history: MangaChapterHistory,
+    history: HistoryWithRelations,
     onClickItem: () -> Unit,
     onClickResume: () -> Unit,
     onClickDelete: () -> Unit,
@@ -203,7 +191,7 @@ fun HistoryItem(
     ) {
         MangaCover(
             modifier = Modifier.fillMaxHeight(),
-            manga = history.manga,
+            data = history.thumbnailUrl,
             aspect = MangaCoverAspect.COVER
         )
         Column(
@@ -215,25 +203,23 @@ fun HistoryItem(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = history.manga.title,
+                text = history.title,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 style = textStyle.copy(fontWeight = FontWeight.SemiBold)
             )
             Row {
                 Text(
-                    text = buildSpannedString {
-                        if (history.chapter.chapter_number > -1) {
-                            append(
-                                stringResource(
-                                    R.string.history_prefix,
-                                    chapterFormatter.format(history.chapter.chapter_number)
-                                )
-                            )
-                        }
-                        append(Date(history.history.last_read).toTimestampString())
-                    }.toString(),
-                    modifier = Modifier.padding(top = 2.dp),
+                    text = if (history.chapterNumber > -1) {
+                        stringResource(
+                            R.string.recent_manga_time,
+                            chapterFormatter.format(history.chapterNumber),
+                            history.readAt?.toTimestampString() ?: "",
+                        )
+                    } else {
+                        history.readAt?.toTimestampString() ?: ""
+                    },
+                    modifier = Modifier.padding(top = 4.dp),
                     style = textStyle
                 )
             }
@@ -270,14 +256,22 @@ fun RemoveHistoryDialog(
             Column {
                 Text(text = stringResource(id = R.string.dialog_with_checkbox_remove_description))
                 Row(
-                    modifier = Modifier.toggleable(value = removeEverything, onValueChange = removeEverythingState),
+                    modifier = Modifier
+                        .padding(top = 16.dp)
+                        .toggleable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            value = removeEverything,
+                            onValueChange = removeEverythingState
+                        ),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Checkbox(
                         checked = removeEverything,
-                        onCheckedChange = removeEverythingState,
+                        onCheckedChange = null,
                     )
                     Text(
+                        modifier = Modifier.padding(start = 4.dp),
                         text = stringResource(id = R.string.dialog_with_checkbox_reset)
                     )
                 }
@@ -296,3 +290,8 @@ fun RemoveHistoryDialog(
         },
     )
 }
+
+private val chapterFormatter = DecimalFormat(
+    "#.###",
+    DecimalFormatSymbols().apply { decimalSeparator = '.' },
+)
