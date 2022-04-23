@@ -25,8 +25,8 @@ android {
         applicationId = "eu.kanade.tachiyomi"
         minSdk = AndroidConfig.minSdk
         targetSdk = AndroidConfig.targetSdk
-        versionCode = 79
-        versionName = "0.13.3"
+        versionCode = 80
+        versionName = "0.13.4"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
         buildConfigField("String", "COMMIT_SHA", "\"${getGitSha()}\"")
@@ -142,6 +142,7 @@ dependencies {
     implementation(compose.foundation)
     implementation(compose.material3.core)
     implementation(compose.material3.adapter)
+    implementation(compose.material.icons)
     implementation(compose.animation)
     implementation(compose.ui.tooling)
 
@@ -239,6 +240,7 @@ dependencies {
     }
     implementation(libs.insetter)
     implementation(libs.markwon)
+    implementation(libs.aboutLibraries.compose)
 
     // Conductor
     implementation(libs.bundles.conductor)
@@ -252,9 +254,6 @@ dependencies {
     // Crash reports/analytics
     implementation(libs.acra.http)
     "standardImplementation"(libs.firebase.analytics)
-
-    // Licenses
-    implementation(libs.aboutlibraries.core)
 
     // Shizuku
     implementation(libs.bundles.shizuku)

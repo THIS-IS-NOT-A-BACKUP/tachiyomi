@@ -9,7 +9,6 @@ import android.webkit.WebView
 import androidx.core.net.toUri
 import androidx.preference.PreferenceScreen
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import eu.kanade.tachiyomi.BuildConfig
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.cache.ChapterCache
 import eu.kanade.tachiyomi.data.database.DatabaseHelper
@@ -22,7 +21,7 @@ import eu.kanade.tachiyomi.network.PREF_DOH_CLOUDFLARE
 import eu.kanade.tachiyomi.network.PREF_DOH_GOOGLE
 import eu.kanade.tachiyomi.network.PREF_DOH_QUAD9
 import eu.kanade.tachiyomi.ui.base.controller.openInBrowser
-import eu.kanade.tachiyomi.ui.base.controller.withFadeTransaction
+import eu.kanade.tachiyomi.ui.base.controller.pushController
 import eu.kanade.tachiyomi.ui.setting.database.ClearDatabaseController
 import eu.kanade.tachiyomi.util.CrashLogUtil
 import eu.kanade.tachiyomi.util.lang.launchIO
@@ -40,6 +39,7 @@ import eu.kanade.tachiyomi.util.preference.summaryRes
 import eu.kanade.tachiyomi.util.preference.switchPreference
 import eu.kanade.tachiyomi.util.preference.titleRes
 import eu.kanade.tachiyomi.util.system.DeviceUtil
+import eu.kanade.tachiyomi.util.system.isDevFlavor
 import eu.kanade.tachiyomi.util.system.isPackageInstalled
 import eu.kanade.tachiyomi.util.system.logcat
 import eu.kanade.tachiyomi.util.system.powerManager
@@ -49,7 +49,6 @@ import logcat.LogPriority
 import rikka.sui.Sui
 import uy.kohesive.injekt.injectLazy
 import eu.kanade.tachiyomi.data.preference.PreferenceKeys as Keys
-import eu.kanade.tachiyomi.util.system.isDevFlavor
 
 class SettingsAdvancedController : SettingsController() {
 
@@ -145,18 +144,12 @@ class SettingsAdvancedController : SettingsController() {
                 defaultValue = false
             }
             preference {
-                key = "pref_clear_webview_data"
-                titleRes = R.string.pref_clear_webview_data
-
-                onClick { clearWebViewData() }
-            }
-            preference {
                 key = "pref_clear_database"
                 titleRes = R.string.pref_clear_database
                 summaryRes = R.string.pref_clear_database_summary
 
                 onClick {
-                    router.pushController(ClearDatabaseController().withFadeTransaction())
+                    router.pushController(ClearDatabaseController())
                 }
             }
         }
@@ -172,6 +165,12 @@ class SettingsAdvancedController : SettingsController() {
                     network.cookieManager.removeAll()
                     activity?.toast(R.string.cookies_cleared)
                 }
+            }
+            preference {
+                key = "pref_clear_webview_data"
+                titleRes = R.string.pref_clear_webview_data
+
+                onClick { clearWebViewData() }
             }
             intListPreference {
                 key = Keys.dohProvider
