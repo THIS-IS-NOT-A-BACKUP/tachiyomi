@@ -262,16 +262,20 @@ dependencies {
 
     // Tests
     testImplementation(libs.junit)
-    testImplementation(libs.assertj.core)
-    testImplementation(libs.mockito.core)
-
-    testImplementation(libs.bundles.robolectric)
 
     // For detecting memory leaks; see https://square.github.io/leakcanary/
     // debugImplementation(libs.leakcanary.android)
+    implementation(libs.leakcanary.plumber)
 }
 
 tasks {
+    withType<Test> {
+        useJUnitPlatform()
+        testLogging {
+            events("passed", "skipped", "failed")
+        }
+    }
+
     // See https://kotlinlang.org/docs/reference/experimental.html#experimental-status-of-experimental-api(-markers)
     withType<KotlinCompile> {
         kotlinOptions.freeCompilerArgs += listOf(

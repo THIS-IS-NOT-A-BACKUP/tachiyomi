@@ -44,11 +44,7 @@ class PreferencesHelper(val context: Context) {
         "backup",
     ).toUri()
 
-    fun startScreen() = prefs.getInt(Keys.startScreen, 1)
-
     fun confirmExit() = prefs.getBoolean(Keys.confirmExit, false)
-
-    fun hideBottomBarOnScroll() = flowPrefs.getBoolean("pref_hide_bottom_bar_on_scroll", true)
 
     fun sideNavIconAlignment() = flowPrefs.getInt("pref_side_nav_icon_alignment", 0)
 
@@ -162,8 +158,6 @@ class PreferencesHelper(val context: Context) {
 
     fun landscapeColumns() = flowPrefs.getInt("pref_library_columns_landscape_key", 0)
 
-    fun jumpToChapters() = prefs.getBoolean(Keys.jumpToChapters, false)
-
     fun autoUpdateTrack() = prefs.getBoolean(Keys.autoUpdateTrack, true)
 
     fun lastUsedSource() = flowPrefs.getLong("last_catalogue_source", -1)
@@ -204,7 +198,7 @@ class PreferencesHelper(val context: Context) {
 
     fun downloadOnlyOverWifi() = prefs.getBoolean(Keys.downloadOnlyOverWifi, true)
 
-    fun saveChaptersAsCBZ() = flowPrefs.getBoolean("save_chapter_as_cbz", false)
+    fun saveChaptersAsCBZ() = flowPrefs.getBoolean("save_chapter_as_cbz", true)
 
     fun folderPerManga() = prefs.getBoolean(Keys.folderPerManga, false)
 
@@ -278,10 +272,10 @@ class PreferencesHelper(val context: Context) {
 
     fun pinnedSources() = flowPrefs.getStringSet("pinned_catalogues", emptySet())
 
-    fun downloadNew() = flowPrefs.getBoolean("download_new", false)
+    fun downloadNewChapter() = flowPrefs.getBoolean("download_new", false)
 
-    fun downloadNewCategories() = flowPrefs.getStringSet("download_new_categories", emptySet())
-    fun downloadNewCategoriesExclude() = flowPrefs.getStringSet("download_new_categories_exclude", emptySet())
+    fun downloadNewChapterCategories() = flowPrefs.getStringSet("download_new_categories", emptySet())
+    fun downloadNewChapterCategoriesExclude() = flowPrefs.getStringSet("download_new_categories_exclude", emptySet())
 
     fun defaultCategory() = prefs.getInt(Keys.defaultCategory, -1)
 
@@ -323,6 +317,8 @@ class PreferencesHelper(val context: Context) {
     fun verboseLogging() = prefs.getBoolean(Keys.verboseLogging, isDevFlavor)
 
     fun autoClearChapterCache() = prefs.getBoolean(Keys.autoClearChapterCache, false)
+
+    fun duplicatePinnedSources() = flowPrefs.getBoolean("duplicate_pinned_sources", false)
 
     fun setChapterSettingsDefault(manga: Manga) {
         prefs.edit {
