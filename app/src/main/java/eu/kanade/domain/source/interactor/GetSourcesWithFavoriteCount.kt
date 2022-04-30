@@ -6,8 +6,8 @@ import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import java.text.Collator
-import java.util.*
-import kotlin.Comparator
+import java.util.Collections
+import java.util.Locale
 
 class GetSourcesWithFavoriteCount(
     private val repository: SourceRepository,
@@ -37,11 +37,14 @@ class GetSourcesWithFavoriteCount(
             val id2 = b.first.name.toLongOrNull()
             when (sorting) {
                 SetMigrateSorting.Mode.ALPHABETICAL -> {
-                    collator.compare(a.first.name.lowercase(locale), b.first.name.lowercase(locale))
+                    when {
+                        id1 != null && id2 == null -> -1
+                        id2 != null && id1 == null -> 1
+                        else -> collator.compare(a.first.name.lowercase(locale), b.first.name.lowercase(locale))
+                    }
                 }
                 SetMigrateSorting.Mode.TOTAL -> {
                     when {
-                        id1 != null && id2 != null -> a.second.compareTo(b.second)
                         id1 != null && id2 == null -> -1
                         id2 != null && id1 == null -> 1
                         else -> a.second.compareTo(b.second)
