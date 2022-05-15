@@ -1,13 +1,10 @@
 package eu.kanade.presentation.source
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -31,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import eu.kanade.domain.source.model.Pin
@@ -40,7 +36,9 @@ import eu.kanade.presentation.components.EmptyScreen
 import eu.kanade.presentation.components.LoadingScreen
 import eu.kanade.presentation.source.components.BaseSourceItem
 import eu.kanade.presentation.theme.header
+import eu.kanade.presentation.util.topPaddingValues
 import eu.kanade.presentation.util.horizontalPadding
+import eu.kanade.presentation.util.plus
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.source.LocalSource
 import eu.kanade.tachiyomi.ui.browse.source.SourcePresenter
@@ -90,7 +88,7 @@ fun SourceList(
     LazyColumn(
         modifier = Modifier
             .nestedScroll(nestedScrollConnection),
-        contentPadding = WindowInsets.navigationBars.asPaddingValues(),
+        contentPadding = WindowInsets.navigationBars.asPaddingValues() + topPaddingValues,
     ) {
         items(
             items = list,
@@ -189,29 +187,6 @@ fun SourceItem(
             )
         },
     )
-}
-
-@Composable
-fun SourceIcon(
-    source: Source,
-) {
-    val icon = source.icon
-    val modifier = Modifier
-        .height(40.dp)
-        .aspectRatio(1f)
-    if (icon != null) {
-        Image(
-            bitmap = icon,
-            contentDescription = "",
-            modifier = modifier,
-        )
-    } else {
-        Image(
-            painter = painterResource(id = R.mipmap.ic_local_source),
-            contentDescription = "",
-            modifier = modifier,
-        )
-    }
 }
 
 @Composable
