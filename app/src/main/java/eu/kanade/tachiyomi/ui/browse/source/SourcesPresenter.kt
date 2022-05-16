@@ -6,7 +6,7 @@ import eu.kanade.domain.source.interactor.ToggleSource
 import eu.kanade.domain.source.interactor.ToggleSourcePin
 import eu.kanade.domain.source.model.Pin
 import eu.kanade.domain.source.model.Source
-import eu.kanade.presentation.source.SourceUiModel
+import eu.kanade.presentation.browse.SourceUiModel
 import eu.kanade.tachiyomi.ui.base.presenter.BasePresenter
 import eu.kanade.tachiyomi.util.lang.launchIO
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,15 +18,11 @@ import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.util.TreeMap
 
-/**
- * Presenter of [SourceController]
- * Function calls should be done from here. UI calls should be done from the controller.
- */
-class SourcePresenter(
+class SourcesPresenter(
     private val getEnabledSources: GetEnabledSources = Injekt.get(),
     private val toggleSource: ToggleSource = Injekt.get(),
     private val toggleSourcePin: ToggleSourcePin = Injekt.get(),
-) : BasePresenter<SourceController>() {
+) : BasePresenter<SourcesController>() {
 
     private val _state: MutableStateFlow<SourceState> = MutableStateFlow(SourceState.Loading)
     val state: StateFlow<SourceState> = _state.asStateFlow()
@@ -42,9 +38,9 @@ class SourcePresenter(
         }
     }
 
-    private suspend fun collectLatestSources(sources: List<Source>) {
+    private fun collectLatestSources(sources: List<Source>) {
         val map = TreeMap<String, MutableList<Source>> { d1, d2 ->
-            // Catalogues without a lang defined will be placed at the end
+            // Sources without a lang defined will be placed at the end
             when {
                 d1 == LAST_USED_KEY && d2 != LAST_USED_KEY -> -1
                 d2 == LAST_USED_KEY && d1 != LAST_USED_KEY -> 1

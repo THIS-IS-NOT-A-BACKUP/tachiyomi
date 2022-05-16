@@ -1,4 +1,4 @@
-package eu.kanade.presentation.extension
+package eu.kanade.presentation.browse
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.combinedClickable
@@ -41,21 +41,21 @@ import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import eu.kanade.presentation.browse.components.BaseBrowseItem
 import eu.kanade.presentation.browse.components.ExtensionIcon
 import eu.kanade.presentation.theme.header
-import eu.kanade.presentation.util.topPaddingValues
 import eu.kanade.presentation.util.horizontalPadding
 import eu.kanade.presentation.util.plus
+import eu.kanade.presentation.util.topPaddingValues
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.extension.model.Extension
 import eu.kanade.tachiyomi.extension.model.InstallStep
-import eu.kanade.tachiyomi.ui.browse.extension.ExtensionPresenter
 import eu.kanade.tachiyomi.ui.browse.extension.ExtensionState
 import eu.kanade.tachiyomi.ui.browse.extension.ExtensionUiModel
+import eu.kanade.tachiyomi.ui.browse.extension.ExtensionsPresenter
 import eu.kanade.tachiyomi.util.system.LocaleHelper
 
 @Composable
 fun ExtensionScreen(
     nestedScrollInterop: NestedScrollConnection,
-    presenter: ExtensionPresenter,
+    presenter: ExtensionsPresenter,
     onLongClickItem: (Extension) -> Unit,
     onClickItemCancel: (Extension) -> Unit,
     onInstallExtension: (Extension.Available) -> Unit,
@@ -112,6 +112,7 @@ fun ExtensionContent(
 ) {
     val (trustState, setTrustState) = remember { mutableStateOf<Extension.Untrusted?>(null) }
     LazyColumn(
+        modifier = Modifier.nestedScroll(nestedScrollInterop),
         contentPadding = WindowInsets.navigationBars.asPaddingValues() + topPaddingValues,
     ) {
         items(
