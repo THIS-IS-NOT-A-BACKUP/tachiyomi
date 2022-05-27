@@ -1,11 +1,11 @@
 -dontobfuscate
 
-# Keep extension's common dependencies
--keep class eu.kanade.tachiyomi.source.** { public protected *; } # Avoid access modification
+# Keep common dependencies used in extensions
 -keep,allowoptimization class eu.kanade.tachiyomi.** { public protected *; }
--keep,allowoptimization class androidx.preference.** { *; }
+-keep,allowoptimization class androidx.preference.** { public protected *; }
 -keep,allowoptimization class kotlin.** { public protected *; }
 -keep,allowoptimization class kotlinx.coroutines.** { public protected *; }
+-keep,allowoptimization class kotlinx.serialization.** { public protected *; }
 -keep,allowoptimization class okhttp3.** { public protected *; }
 -keep,allowoptimization class okio.** { public protected *; }
 -keep,allowoptimization class rx.** { public protected *; }
