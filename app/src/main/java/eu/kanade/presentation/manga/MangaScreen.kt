@@ -338,7 +338,7 @@ private fun MangaScreenSmallImpl(
                         selected.clear()
                     }.takeIf { selected.size == 1 },
                     onDownloadClicked = {
-                        onDownloadChapter!!(selected, ChapterDownloadAction.START)
+                        onDownloadChapter!!(selected.toList(), ChapterDownloadAction.START)
                         selected.clear()
                     }.takeIf {
                         onDownloadChapter != null && selected.any { it.downloadState != Download.State.DOWNLOADED }
@@ -390,12 +390,13 @@ private fun MangaScreenSmallImpl(
                 ) {
                     items(items = chapters) { chapterItem ->
                         val (chapter, downloadState, downloadProgress) = chapterItem
-                        val chapterTitle = remember(state.manga.displayMode, chapter.chapterNumber, chapter.name) {
-                            if (state.manga.displayMode == CHAPTER_DISPLAY_NUMBER) {
-                                chapterDecimalFormat.format(chapter.chapterNumber.toDouble())
-                            } else {
-                                chapter.name
-                            }
+                        val chapterTitle = if (state.manga.displayMode == CHAPTER_DISPLAY_NUMBER) {
+                            stringResource(
+                                id = R.string.display_mode_chapter,
+                                chapterDecimalFormat.format(chapter.chapterNumber.toDouble()),
+                            )
+                        } else {
+                            chapter.name
                         }
                         val date = remember(chapter.dateUpload) {
                             chapter.dateUpload

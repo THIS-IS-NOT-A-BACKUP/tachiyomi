@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalMinimumTouchTargetEnforcement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
@@ -63,6 +64,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -129,34 +131,36 @@ fun MangaInfoHeader(
             )
 
             // Manga & source info
-            if (windowWidthSizeClass == WindowWidthSizeClass.Compact) {
-                MangaAndSourceTitlesSmall(
-                    appBarPadding = appBarPadding,
-                    coverDataProvider = coverDataProvider,
-                    onCoverClick = onCoverClick,
-                    title = title,
-                    context = context,
-                    doSearch = doSearch,
-                    author = author,
-                    artist = artist,
-                    status = status,
-                    sourceName = sourceName,
-                    isStubSource = isStubSource,
-                )
-            } else {
-                MangaAndSourceTitlesLarge(
-                    appBarPadding = appBarPadding,
-                    coverDataProvider = coverDataProvider,
-                    onCoverClick = onCoverClick,
-                    title = title,
-                    context = context,
-                    doSearch = doSearch,
-                    author = author,
-                    artist = artist,
-                    status = status,
-                    sourceName = sourceName,
-                    isStubSource = isStubSource,
-                )
+            CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
+                if (windowWidthSizeClass == WindowWidthSizeClass.Compact) {
+                    MangaAndSourceTitlesSmall(
+                        appBarPadding = appBarPadding,
+                        coverDataProvider = coverDataProvider,
+                        onCoverClick = onCoverClick,
+                        title = title,
+                        context = context,
+                        doSearch = doSearch,
+                        author = author,
+                        artist = artist,
+                        status = status,
+                        sourceName = sourceName,
+                        isStubSource = isStubSource,
+                    )
+                } else {
+                    MangaAndSourceTitlesLarge(
+                        appBarPadding = appBarPadding,
+                        coverDataProvider = coverDataProvider,
+                        onCoverClick = onCoverClick,
+                        title = title,
+                        context = context,
+                        doSearch = doSearch,
+                        author = author,
+                        artist = artist,
+                        status = status,
+                        sourceName = sourceName,
+                        isStubSource = isStubSource,
+                    )
+                }
             }
         }
 
@@ -313,7 +317,7 @@ private fun MangaAndSourceTitlesLarge(
                 ),
             textAlign = TextAlign.Center,
         )
-        if (!artist.isNullOrBlank()) {
+        if (!artist.isNullOrBlank() && author != artist) {
             Text(
                 text = artist,
                 style = MaterialTheme.typography.titleSmall,
@@ -358,6 +362,8 @@ private fun MangaAndSourceTitlesLarge(
                         SManga.ON_HIATUS.toLong() -> stringResource(R.string.on_hiatus)
                         else -> stringResource(R.string.unknown)
                     },
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1,
                 )
                 DotSeparatorText()
                 if (isStubSource) {
@@ -373,6 +379,8 @@ private fun MangaAndSourceTitlesLarge(
                 Text(
                     text = sourceName,
                     modifier = Modifier.clickableNoIndication { doSearch(sourceName, false) },
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1,
                 )
             }
         }
@@ -400,7 +408,9 @@ private fun MangaAndSourceTitlesSmall(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         MangaCover.Book(
-            modifier = Modifier.sizeIn(maxWidth = 100.dp),
+            modifier = Modifier
+                .sizeIn(maxWidth = 100.dp)
+                .align(Alignment.Top),
             data = coverDataProvider(),
             onClick = onCoverClick,
         )
@@ -409,13 +419,19 @@ private fun MangaAndSourceTitlesSmall(
                 text = title.ifBlank { stringResource(R.string.unknown) },
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.clickableNoIndication(
-                    onLongClick = { if (title.isNotBlank()) context.copyToClipboard(title, title) },
+                    onLongClick = {
+                        if (title.isNotBlank()) context.copyToClipboard(
+                            title,
+                            title,
+                        )
+                    },
                     onClick = { if (title.isNotBlank()) doSearch(title, true) },
                 ),
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = author?.takeIf { it.isNotBlank() } ?: stringResource(R.string.unknown_author),
+                text = author?.takeIf { it.isNotBlank() }
+                    ?: stringResource(R.string.unknown_author),
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier
                     .secondaryItemAlpha()
@@ -430,7 +446,7 @@ private fun MangaAndSourceTitlesSmall(
                         onClick = { if (!author.isNullOrBlank()) doSearch(author, true) },
                     ),
             )
-            if (!artist.isNullOrBlank()) {
+            if (!artist.isNullOrBlank() && author != artist) {
                 Text(
                     text = artist,
                     style = MaterialTheme.typography.titleSmall,
@@ -474,6 +490,8 @@ private fun MangaAndSourceTitlesSmall(
                             SManga.ON_HIATUS.toLong() -> stringResource(R.string.on_hiatus)
                             else -> stringResource(R.string.unknown)
                         },
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 1,
                     )
                     DotSeparatorText()
                     if (isStubSource) {
@@ -488,7 +506,14 @@ private fun MangaAndSourceTitlesSmall(
                     }
                     Text(
                         text = sourceName,
-                        modifier = Modifier.clickableNoIndication { doSearch(sourceName, false) },
+                        modifier = Modifier.clickableNoIndication {
+                            doSearch(
+                                sourceName,
+                                false,
+                            )
+                        },
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 1,
                     )
                 }
             }
