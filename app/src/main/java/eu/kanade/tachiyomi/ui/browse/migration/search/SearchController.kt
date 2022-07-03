@@ -6,9 +6,11 @@ import androidx.core.view.isVisible
 import com.bluelinelabs.conductor.Controller
 import com.bluelinelabs.conductor.RouterTransaction
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import eu.kanade.domain.manga.interactor.GetManga
+import eu.kanade.domain.manga.model.toDbManga
 import eu.kanade.tachiyomi.R
-import eu.kanade.tachiyomi.data.database.DatabaseHelper
 import eu.kanade.tachiyomi.data.database.models.Manga
+import eu.kanade.tachiyomi.data.database.models.toDomainManga
 import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.ui.base.controller.DialogController
@@ -17,6 +19,7 @@ import eu.kanade.tachiyomi.ui.browse.migration.MigrationFlags
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchController
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchPresenter
 import eu.kanade.tachiyomi.ui.manga.MangaController
+import kotlinx.coroutines.runBlocking
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import uy.kohesive.injekt.injectLazy
@@ -26,9 +29,11 @@ class SearchController(
 ) : GlobalSearchController(manga?.title) {
 
     constructor(mangaId: Long) : this(
-        Injekt.get<DatabaseHelper>()
-            .getManga(mangaId)
-            .executeAsBlocking(),
+        runBlocking {
+            Injekt.get<GetManga>()
+                .await(mangaId)
+                ?.toDbManga()
+        },
     )
 
     private var newManga: Manga? = null
@@ -104,7 +109,7 @@ class SearchController(
         override fun onCreateDialog(savedViewState: Bundle?): Dialog {
             val prefValue = preferences.migrateFlags().get()
             val enabledFlagsPositions = MigrationFlags.getEnabledFlagsPositions(prefValue)
-            val items = MigrationFlags.titles(manga)
+            val items = MigrationFlags.titles(manga?.toDomainManga())
                 .map { resources?.getString(it) }
                 .toTypedArray()
             val selected = items
@@ -149,6 +154,6 @@ class SearchController(
     override fun onTitleClick(source: CatalogueSource) {
         presenter.preferences.lastUsedSource().set(source.id)
 
-        router.pushController(SourceSearchController(manga, source, presenter.query))
+        router.pushController(SourceSearchController(manga?.toDomainManga(), source, presenter.query))
     }
 }

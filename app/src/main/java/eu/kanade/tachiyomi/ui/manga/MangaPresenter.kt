@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.compose.runtime.Immutable
 import eu.kanade.domain.category.interactor.GetCategories
 import eu.kanade.domain.category.interactor.SetMangaCategories
+import eu.kanade.domain.category.model.Category
 import eu.kanade.domain.chapter.interactor.SyncChaptersWithSource
 import eu.kanade.domain.chapter.interactor.SyncChaptersWithTrackServiceTwoWay
 import eu.kanade.domain.chapter.interactor.UpdateChapter
@@ -22,10 +23,7 @@ import eu.kanade.domain.track.interactor.GetTracks
 import eu.kanade.domain.track.interactor.InsertTrack
 import eu.kanade.domain.track.model.toDbTrack
 import eu.kanade.domain.track.model.toDomainTrack
-import eu.kanade.tachiyomi.data.database.DatabaseHelper
-import eu.kanade.tachiyomi.data.database.models.Category
 import eu.kanade.tachiyomi.data.database.models.Chapter
-import eu.kanade.tachiyomi.data.database.models.Manga
 import eu.kanade.tachiyomi.data.database.models.Track
 import eu.kanade.tachiyomi.data.database.models.toDomainChapter
 import eu.kanade.tachiyomi.data.download.DownloadManager
@@ -78,7 +76,6 @@ class MangaPresenter(
     val mangaId: Long,
     val isFromSource: Boolean,
     private val preferences: PreferencesHelper = Injekt.get(),
-    private val db: DatabaseHelper = Injekt.get(),
     private val trackManager: TrackManager = Injekt.get(),
     private val downloadManager: DownloadManager = Injekt.get(),
     private val getMangaAndChapters: GetMangaWithChapters = Injekt.get(),
@@ -152,7 +149,7 @@ class MangaPresenter(
 
         presenterScope.launchIO {
             if (!getMangaAndChapters.awaitManga(mangaId).favorite) {
-                ChapterSettingsHelper.applySettingDefaults(mangaId, setMangaChapterFlags)
+                ChapterSettingsHelper.applySettingDefaults(mangaId)
             }
 
             getMangaAndChapters.subscribe(mangaId)
@@ -259,22 +256,22 @@ class MangaPresenter(
 
                 // Now check if user previously set categories, when available
                 val categories = getCategories()
-                val defaultCategoryId = preferences.defaultCategory()
+                val defaultCategoryId = preferences.defaultCategory().toLong()
                 val defaultCategory = categories.find { it.id == defaultCategoryId }
                 when {
                     // Default category set
                     defaultCategory != null -> {
                         val result = updateManga.awaitUpdateFavorite(manga.id, true)
                         if (!result) return@launchIO
-                        moveMangaToCategory(manga.toDbManga(), defaultCategory)
+                        moveMangaToCategory(defaultCategory)
                         launchUI { onAdded() }
                     }
 
                     // Automatic 'Default' or no categories
-                    defaultCategoryId == 0 || categories.isEmpty() -> {
+                    defaultCategoryId == 0L || categories.isEmpty() -> {
                         val result = updateManga.awaitUpdateFavorite(manga.id, true)
                         if (!result) return@launchIO
-                        moveMangaToCategory(manga.toDbManga(), null)
+                        moveMangaToCategory(null)
                         launchUI { onAdded() }
                     }
 
@@ -326,8 +323,8 @@ class MangaPresenter(
      *
      * @return List of categories, not including the default category
      */
-    fun getCategories(): List<Category> {
-        return db.getCategories().executeAsBlocking()
+    suspend fun getCategories(): List<Category> {
+        return getCategories.await()
     }
 
     /**
@@ -336,15 +333,15 @@ class MangaPresenter(
      * @param manga the manga to get categories from.
      * @return Array of category ids the manga is in, if none returns default id
      */
-    fun getMangaCategoryIds(manga: DomainManga): Array<Int> {
+    fun getMangaCategoryIds(manga: DomainManga): Array<Long> {
         val categories = runBlocking { getCategories.await(manga.id) }
-        return categories.map { it.id.toInt() }.toTypedArray()
+        return categories.map { it.id }.toTypedArray()
     }
 
-    fun moveMangaToCategoriesAndAddToLibrary(manga: Manga, categories: List<Category>) {
-        moveMangaToCategories(manga, categories)
+    fun moveMangaToCategoriesAndAddToLibrary(manga: DomainManga, categories: List<Category>) {
+        moveMangaToCategories(categories)
         presenterScope.launchIO {
-            updateManga.awaitUpdateFavorite(manga.id!!, true)
+            updateManga.awaitUpdateFavorite(manga.id, true)
         }
     }
 
@@ -354,9 +351,8 @@ class MangaPresenter(
      * @param manga the manga to move.
      * @param categories the selected categories.
      */
-    private fun moveMangaToCategories(manga: Manga, categories: List<Category>) {
-        val mangaId = manga.id ?: return
-        val categoryIds = categories.mapNotNull { it.id?.toLong() }
+    private fun moveMangaToCategories(categories: List<Category>) {
+        val categoryIds = categories.map { it.id }
         presenterScope.launchIO {
             setMangaCategories.await(mangaId, categoryIds)
         }
@@ -368,8 +364,8 @@ class MangaPresenter(
      * @param manga the manga to move.
      * @param category the selected category, or null for default category.
      */
-    private fun moveMangaToCategory(manga: Manga, category: Category?) {
-        moveMangaToCategories(manga, listOfNotNull(category))
+    private fun moveMangaToCategory(category: Category?) {
+        moveMangaToCategories(listOfNotNull(category))
     }
 
     private fun observeTrackingCount() {
@@ -597,9 +593,12 @@ class MangaPresenter(
     }
 
     private fun downloadNewChapters(chapters: List<Chapter>) {
-        val manga = successState?.manga ?: return
-        if (chapters.isEmpty() || !manga.shouldDownloadNewChapters(db, preferences)) return
-        downloadChapters(chapters.map { it.toDomainChapter()!! })
+        presenterScope.launchIO {
+            val manga = successState?.manga ?: return@launchIO
+            val categories = getCategories.await(manga.id).map { it.id }
+            if (chapters.isEmpty() || !manga.shouldDownloadNewChapters(categories, preferences)) return@launchIO
+            downloadChapters(chapters.map { it.toDomainChapter()!! })
+        }
     }
 
     /**
