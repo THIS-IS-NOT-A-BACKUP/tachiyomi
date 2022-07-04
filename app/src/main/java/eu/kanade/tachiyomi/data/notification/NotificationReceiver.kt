@@ -9,14 +9,13 @@ import android.os.Build
 import androidx.core.content.ContextCompat
 import eu.kanade.domain.chapter.interactor.GetChapter
 import eu.kanade.domain.chapter.interactor.UpdateChapter
+import eu.kanade.domain.chapter.model.Chapter
 import eu.kanade.domain.chapter.model.toChapterUpdate
 import eu.kanade.domain.chapter.model.toDbChapter
 import eu.kanade.domain.manga.interactor.GetManga
-import eu.kanade.domain.manga.model.toDbManga
+import eu.kanade.domain.manga.model.Manga
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.backup.BackupRestoreService
-import eu.kanade.tachiyomi.data.database.models.Chapter
-import eu.kanade.tachiyomi.data.database.models.Manga
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.download.DownloadService
 import eu.kanade.tachiyomi.data.library.LibraryUpdateService
@@ -252,7 +251,7 @@ class NotificationReceiver : BroadcastReceiver() {
                         if (manga != null) {
                             val source = sourceManager.get(manga.source)
                             if (source != null) {
-                                downloadManager.deleteChapters(listOf(it.toDbChapter()), manga.toDbManga(), source)
+                                downloadManager.deleteChapters(listOf(it.toDbChapter()), manga, source)
                             }
                         }
                     }
@@ -270,7 +269,7 @@ class NotificationReceiver : BroadcastReceiver() {
      */
     private fun downloadChapters(chapterUrls: Array<String>, mangaId: Long) {
         launchIO {
-            val manga = getManga.await(mangaId)?.toDbManga()
+            val manga = getManga.await(mangaId)
             val chapters = chapterUrls.mapNotNull { getChapter.await(it, mangaId)?.toDbChapter() }
             if (manga != null && chapters.isNotEmpty()) {
                 downloadManager.downloadChapters(manga, chapters)

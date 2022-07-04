@@ -23,9 +23,7 @@ import eu.kanade.domain.track.interactor.GetTracks
 import eu.kanade.domain.track.interactor.InsertTrack
 import eu.kanade.domain.track.model.toDbTrack
 import eu.kanade.domain.track.model.toDomainTrack
-import eu.kanade.tachiyomi.data.database.models.Chapter
 import eu.kanade.tachiyomi.data.database.models.Track
-import eu.kanade.tachiyomi.data.database.models.toDomainChapter
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.download.model.Download
 import eu.kanade.tachiyomi.data.preference.PreferencesHelper
@@ -307,7 +305,7 @@ class MangaPresenter(
      */
     fun hasDownloads(): Boolean {
         val manga = successState?.manga ?: return false
-        return downloadManager.getDownloadCount(manga.toDbManga()) > 0
+        return downloadManager.getDownloadCount(manga) > 0
     }
 
     /**
@@ -315,7 +313,7 @@ class MangaPresenter(
      */
     fun deleteDownloads() {
         val state = successState ?: return
-        downloadManager.deleteManga(state.manga.toDbManga(), state.source)
+        downloadManager.deleteManga(state.manga, state.source)
     }
 
     /**
@@ -375,7 +373,7 @@ class MangaPresenter(
             getTracks.subscribe(manga.id)
                 .catch { logcat(LogPriority.ERROR, it) }
                 .map { tracks ->
-                    val loggedServicesId = loggedServices.map { it.id.toLong() }
+                    val loggedServicesId = loggedServices.map { it.id }
                     tracks.filter { it.syncId in loggedServicesId }.size
                 }
                 .collectLatest { trackingCount ->
@@ -464,8 +462,7 @@ class MangaPresenter(
                     )
 
                     if (manualFetch) {
-                        val dbChapters = newChapters.map { it.toDbChapter() }
-                        downloadNewChapters(dbChapters)
+                        downloadNewChapters(newChapters)
                     }
                 }
             } catch (e: Throwable) {
@@ -544,7 +541,7 @@ class MangaPresenter(
      */
     fun downloadChapters(chapters: List<DomainChapter>) {
         val manga = successState?.manga ?: return
-        downloadManager.downloadChapters(manga.toDbManga(), chapters.map { it.toDbChapter() })
+        downloadManager.downloadChapters(manga, chapters.map { it.toDbChapter() })
     }
 
     /**
@@ -570,7 +567,7 @@ class MangaPresenter(
             try {
                 updateSuccessState { successState ->
                     val deletedIds = downloadManager
-                        .deleteChapters(chapters2, successState.manga.toDbManga(), successState.source)
+                        .deleteChapters(chapters2, successState.manga, successState.source)
                         .map { it.id }
                     val deletedChapters = successState.chapters.filter { deletedIds.contains(it.chapter.id) }
                     if (deletedChapters.isEmpty()) return@updateSuccessState successState
@@ -592,12 +589,12 @@ class MangaPresenter(
         }
     }
 
-    private fun downloadNewChapters(chapters: List<Chapter>) {
+    private fun downloadNewChapters(chapters: List<DomainChapter>) {
         presenterScope.launchIO {
             val manga = successState?.manga ?: return@launchIO
             val categories = getCategories.await(manga.id).map { it.id }
             if (chapters.isEmpty() || !manga.shouldDownloadNewChapters(categories, preferences)) return@launchIO
-            downloadChapters(chapters.map { it.toDomainChapter()!! })
+            downloadChapters(chapters)
         }
     }
 
@@ -784,7 +781,7 @@ class MangaPresenter(
         val manga = successState?.manga ?: return
 
         presenterScope.launchIO {
-            deleteTrack.await(manga.id, service.id.toLong())
+            deleteTrack.await(manga.id, service.id)
         }
     }
 
