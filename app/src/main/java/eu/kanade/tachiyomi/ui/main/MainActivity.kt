@@ -43,7 +43,7 @@ import eu.kanade.tachiyomi.extension.api.ExtensionGithubApi
 import eu.kanade.tachiyomi.ui.base.activity.BaseActivity
 import eu.kanade.tachiyomi.ui.base.controller.DialogController
 import eu.kanade.tachiyomi.ui.base.controller.FabController
-import eu.kanade.tachiyomi.ui.base.controller.FullComposeController
+import eu.kanade.tachiyomi.ui.base.controller.FullComposeContentController
 import eu.kanade.tachiyomi.ui.base.controller.NoAppBarElevationController
 import eu.kanade.tachiyomi.ui.base.controller.RootController
 import eu.kanade.tachiyomi.ui.base.controller.TabbedController
@@ -62,7 +62,7 @@ import eu.kanade.tachiyomi.ui.recent.updates.UpdatesController
 import eu.kanade.tachiyomi.ui.setting.SettingsMainController
 import eu.kanade.tachiyomi.util.lang.launchIO
 import eu.kanade.tachiyomi.util.lang.launchUI
-import eu.kanade.tachiyomi.util.preference.asImmediateFlow
+import eu.kanade.tachiyomi.util.preference.asHotFlow
 import eu.kanade.tachiyomi.util.system.dpToPx
 import eu.kanade.tachiyomi.util.system.getThemeColor
 import eu.kanade.tachiyomi.util.system.isTablet
@@ -145,7 +145,7 @@ class MainActivity : BaseActivity() {
 
         if (binding.sideNav != null) {
             preferences.sideNavIconAlignment()
-                .asImmediateFlow {
+                .asHotFlow {
                     binding.sideNav?.menuGravity = when (it) {
                         1 -> Gravity.CENTER
                         2 -> Gravity.BOTTOM
@@ -255,11 +255,11 @@ class MainActivity : BaseActivity() {
             .launchIn(lifecycleScope)
 
         preferences.extensionUpdatesCount()
-            .asImmediateFlow { setExtensionsBadge() }
+            .asHotFlow { setExtensionsBadge() }
             .launchIn(lifecycleScope)
 
         preferences.downloadedOnly()
-            .asImmediateFlow { binding.downloadedOnly.isVisible = it }
+            .asHotFlow { binding.downloadedOnly.isVisible = it }
             .launchIn(lifecycleScope)
 
         binding.incognitoMode.isVisible = preferences.incognitoMode().get()
@@ -606,7 +606,7 @@ class MainActivity : BaseActivity() {
             binding.fabLayout.rootFab.hide()
         }
 
-        val isFullComposeController = internalTo is FullComposeController<*>
+        val isFullComposeController = internalTo is FullComposeContentController
         binding.appbar.isVisible = !isFullComposeController
         binding.controllerContainer.enableScrollingBehavior(!isFullComposeController)
 

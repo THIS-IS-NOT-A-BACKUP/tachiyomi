@@ -1,6 +1,15 @@
 package eu.kanade.tachiyomi.ui.library
 
 import android.os.Bundle
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.util.fastAny
 import com.jakewharton.rxrelay.BehaviorRelay
 import eu.kanade.core.util.asObservable
 import eu.kanade.data.DatabaseHandler
@@ -9,7 +18,6 @@ import eu.kanade.domain.category.interactor.SetMangaCategories
 import eu.kanade.domain.category.model.Category
 import eu.kanade.domain.chapter.interactor.GetChapterByMangaId
 import eu.kanade.domain.chapter.interactor.SetReadStatus
-import eu.kanade.domain.chapter.interactor.UpdateChapter
 import eu.kanade.domain.chapter.model.toDbChapter
 import eu.kanade.domain.manga.interactor.GetLibraryManga
 import eu.kanade.domain.manga.interactor.UpdateManga
@@ -18,6 +26,7 @@ import eu.kanade.domain.manga.model.MangaUpdate
 import eu.kanade.domain.manga.model.isLocal
 import eu.kanade.domain.track.interactor.GetTracks
 import eu.kanade.tachiyomi.data.cache.CoverCache
+import eu.kanade.tachiyomi.data.database.models.LibraryManga
 import eu.kanade.tachiyomi.data.database.models.toDomainManga
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.preference.PreferencesHelper
@@ -26,6 +35,7 @@ import eu.kanade.tachiyomi.source.SourceManager
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.ui.base.presenter.BasePresenter
+import eu.kanade.tachiyomi.ui.library.setting.DisplayModeSetting
 import eu.kanade.tachiyomi.ui.library.setting.SortDirectionSetting
 import eu.kanade.tachiyomi.ui.library.setting.SortModeSetting
 import eu.kanade.tachiyomi.util.lang.combineLatest
@@ -33,6 +43,7 @@ import eu.kanade.tachiyomi.util.lang.isNullOrUnsubscribed
 import eu.kanade.tachiyomi.util.lang.launchIO
 import eu.kanade.tachiyomi.util.removeCovers
 import eu.kanade.tachiyomi.widget.ExtendedNavigationView.Item.TriStateGroup.State
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 import rx.Observable
 import rx.Subscription
@@ -65,7 +76,6 @@ class LibraryPresenter(
     private val getCategories: GetCategories = Injekt.get(),
     private val getChapterByMangaId: GetChapterByMangaId = Injekt.get(),
     private val setReadStatus: SetReadStatus = Injekt.get(),
-    private val updateChapter: UpdateChapter = Injekt.get(),
     private val updateManga: UpdateManga = Injekt.get(),
     private val setMangaCategories: SetMangaCategories = Injekt.get(),
     private val preferences: PreferencesHelper = Injekt.get(),
@@ -80,8 +90,23 @@ class LibraryPresenter(
     /**
      * Categories of the library.
      */
-    var categories: List<Category> = emptyList()
+    var categories: List<Category> = mutableStateListOf()
         private set
+
+    var loadedManga = mutableStateMapOf<Long, List<LibraryItem>>()
+        private set
+
+    val loadedMangaFlow = MutableStateFlow(loadedManga)
+
+    var searchQuery by mutableStateOf(query)
+
+    val selection: MutableList<LibraryManga> = mutableStateListOf()
+
+    val isPerCategory by preferences.categorizedDisplaySettings().asState()
+
+    var columns by mutableStateOf(0)
+
+    var currentDisplayMode by preferences.libraryDisplayMode().asState()
 
     /**
      * Relay used to apply the UI filters to the last emission of the library.
@@ -98,13 +123,11 @@ class LibraryPresenter(
      */
     private val sortTriggerRelay = BehaviorRelay.create(Unit)
 
-    /**
-     * Library subscription.
-     */
     private var librarySubscription: Subscription? = null
 
     override fun onCreate(savedState: Bundle?) {
         super.onCreate(savedState)
+
         subscribeLibrary()
     }
 
@@ -194,8 +217,8 @@ class LibraryPresenter(
 
             if (!containsExclude.any() && !containsInclude.any()) return@tracking true
 
-            val exclude = trackedManga?.filterKeys { containsExclude.containsKey(it.toLong()) }?.values ?: emptyList()
-            val include = trackedManga?.filterKeys { containsInclude.containsKey(it.toLong()) }?.values ?: emptyList()
+            val exclude = trackedManga?.filterKeys { containsExclude.containsKey(it) }?.values ?: emptyList()
+            val include = trackedManga?.filterKeys { containsInclude.containsKey(it) }?.values ?: emptyList()
 
             if (containsInclude.any() && containsExclude.any()) {
                 return@tracking if (exclude.isNotEmpty()) !exclude.any() else include.any()
@@ -409,18 +432,11 @@ class LibraryPresenter(
      * value.
      */
     private fun getLibraryMangasObservable(): Observable<LibraryMap> {
-        val defaultLibraryDisplayMode = preferences.libraryDisplayMode()
-        val shouldSetFromCategory = preferences.categorizedDisplaySettings()
-
         return getLibraryManga.subscribe().asObservable()
             .map { list ->
                 list.map { libraryManga ->
                     // Display mode based on user preference: take it from global library setting or category
-                    LibraryItem(
-                        libraryManga,
-                        shouldSetFromCategory,
-                        defaultLibraryDisplayMode,
-                    )
+                    LibraryItem(libraryManga)
                 }.groupBy { it.manga.category.toLong() }
             }
     }
@@ -591,5 +607,69 @@ class LibraryPresenter(
                 setMangaCategories.await(manga.id, categoryIds)
             }
         }
+    }
+
+    @Composable
+    fun getMangaForCategory(categoryId: Long): androidx.compose.runtime.State<List<LibraryItem>> {
+        val unfiltered = loadedManga[categoryId] ?: emptyList()
+
+        return derivedStateOf {
+            val query = searchQuery
+            if (query.isNotBlank()) {
+                unfiltered.filter {
+                    it.filter(query)
+                }
+            } else {
+                unfiltered
+            }
+        }
+    }
+
+    @Composable
+    fun getDisplayMode(index: Int): DisplayModeSetting {
+        val category = categories[index]
+        return remember {
+            if (isPerCategory.not() || category.id == 0L) {
+                currentDisplayMode
+            } else {
+                DisplayModeSetting.fromFlag(category.displayMode)
+            }
+        }
+    }
+
+    fun hasSelection(): Boolean {
+        return selection.isNotEmpty()
+    }
+
+    fun clearSelection() {
+        selection.clear()
+    }
+
+    fun toggleSelection(manga: LibraryManga) {
+        if (selection.fastAny { it.id == manga.id }) {
+            selection.remove(manga)
+        } else {
+            selection.add(manga)
+        }
+        view?.invalidateActionMode()
+        view?.createActionModeIfNeeded()
+    }
+
+    fun selectAll(index: Int) {
+        val category = categories[index]
+        val items = loadedManga[category.id] ?: emptyList()
+        selection.addAll(items.filterNot { it.manga in selection }.map { it.manga })
+        view?.createActionModeIfNeeded()
+        view?.invalidateActionMode()
+    }
+
+    fun invertSelection(index: Int) {
+        val category = categories[index]
+        val items = (loadedManga[category.id] ?: emptyList()).map { it.manga }
+        val invert = items.filterNot { it in selection }
+        selection.removeAll(items)
+        selection.addAll(invert)
+        view?.createActionModeIfNeeded()
+        view?.invalidateActionMode()
     }
 }

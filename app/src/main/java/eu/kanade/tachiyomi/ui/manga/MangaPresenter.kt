@@ -45,7 +45,7 @@ import eu.kanade.tachiyomi.util.lang.launchIO
 import eu.kanade.tachiyomi.util.lang.launchUI
 import eu.kanade.tachiyomi.util.lang.toRelativeString
 import eu.kanade.tachiyomi.util.lang.withUIContext
-import eu.kanade.tachiyomi.util.preference.asImmediateFlow
+import eu.kanade.tachiyomi.util.preference.asHotFlow
 import eu.kanade.tachiyomi.util.removeCovers
 import eu.kanade.tachiyomi.util.shouldDownloadNewChapters
 import eu.kanade.tachiyomi.util.system.logcat
@@ -147,6 +147,17 @@ class MangaPresenter(
         _state.update { if (it is MangaScreenState.Success) func(it) else it }
     }
 
+    private var incognitoMode = false
+        set(value) {
+            updateSuccessState { it.copy(isIncognitoMode = value) }
+            field = value
+        }
+    private var downloadedOnlyMode = false
+        set(value) {
+            updateSuccessState { it.copy(isDownloadedOnlyMode = value) }
+            field = value
+        }
+
     override fun onCreate(savedState: Bundle?) {
         super.onCreate(savedState)
 
@@ -174,6 +185,8 @@ class MangaPresenter(
                                 isFromSource = isFromSource,
                                 trackingAvailable = trackManager.hasLoggedServices(),
                                 chapters = chapterItems,
+                                isIncognitoMode = incognitoMode,
+                                isDownloadedOnlyMode = downloadedOnlyMode,
                             )
 
                             // Update state
@@ -194,14 +207,14 @@ class MangaPresenter(
         }
 
         preferences.incognitoMode()
-            .asImmediateFlow { incognito ->
-                updateSuccessState { it.copy(isIncognitoMode = incognito) }
+            .asHotFlow { incognito ->
+                incognitoMode = incognito
             }
             .launchIn(presenterScope)
 
         preferences.downloadedOnly()
-            .asImmediateFlow { downloadedOnly ->
-                updateSuccessState { it.copy(isDownloadedOnlyMode = downloadedOnly) }
+            .asHotFlow { downloadedOnly ->
+                downloadedOnlyMode = downloadedOnly
             }
             .launchIn(presenterScope)
     }
