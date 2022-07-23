@@ -68,7 +68,6 @@ import eu.kanade.tachiyomi.util.system.isTablet
 import eu.kanade.tachiyomi.util.system.logcat
 import eu.kanade.tachiyomi.util.system.toast
 import eu.kanade.tachiyomi.util.view.setNavigationBarTransparentCompat
-import eu.kanade.tachiyomi.widget.ActionModeWithToolbar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
@@ -488,9 +487,13 @@ class MainActivity : BaseActivity() {
             return
         }
         val backstackSize = router.backstackSize
-        if (backstackSize == 1 && router.getControllerWithTag("$startScreenId") == null) {
+        val startScreen = router.getControllerWithTag("$startScreenId")
+        if (backstackSize == 1 && startScreen == null) {
             // Return to start screen
             moveToStartScreen()
+            setSelectedNavItem(startScreenId)
+        } else if (startScreen != null && router.handleBack()) {
+            // Clear selection for Library screen
         } else if (shouldHandleExitConfirmation()) {
             // Exit confirmation (resets after 2 seconds)
             lifecycleScope.launchUI { resetExitConfirmation() }
@@ -527,11 +530,6 @@ class MainActivity : BaseActivity() {
         }
         window.statusBarColor = getThemeColor(android.R.attr.statusBarColor)
         super.onSupportActionModeFinished(mode)
-    }
-
-    fun startActionModeAndToolbar(modeCallback: ActionModeWithToolbar.Callback): ActionModeWithToolbar {
-        binding.actionToolbar.start(modeCallback)
-        return binding.actionToolbar
     }
 
     private suspend fun resetExitConfirmation() {

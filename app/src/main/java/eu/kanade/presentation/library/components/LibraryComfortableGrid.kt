@@ -21,10 +21,14 @@ fun LibraryComfortableGrid(
     selection: List<LibraryManga>,
     onClick: (LibraryManga) -> Unit,
     onLongClick: (LibraryManga) -> Unit,
+    searchQuery: String?,
+    onGlobalSearchClicked: () -> Unit,
 ) {
     LazyLibraryGrid(
         columns = columns,
     ) {
+        globalSearchItem(searchQuery, onGlobalSearchClicked)
+
         items(
             items = items,
             key = {
