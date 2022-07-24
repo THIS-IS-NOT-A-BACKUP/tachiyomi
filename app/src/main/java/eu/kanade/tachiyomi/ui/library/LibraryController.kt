@@ -62,7 +62,7 @@ class LibraryController(
             onDeleteClicked = ::showDeleteMangaDialog,
             onClickFilter = ::showSettingsSheet,
             onClickRefresh = {
-                if (LibraryUpdateService.start(context)) {
+                if (LibraryUpdateService.start(context, it)) {
                     context.toast(R.string.updating_library)
                 }
             },
@@ -73,6 +73,11 @@ class LibraryController(
         LaunchedEffect(presenter.selectionMode) {
             val activity = (activity as? MainActivity) ?: return@LaunchedEffect
             activity.showBottomNav(presenter.selectionMode.not())
+        }
+        LaunchedEffect(presenter.isLoading) {
+            if (presenter.isLoading.not()) {
+                (activity as? MainActivity)?.ready = true
+            }
         }
     }
 

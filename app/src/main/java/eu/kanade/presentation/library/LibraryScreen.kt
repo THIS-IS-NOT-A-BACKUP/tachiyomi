@@ -1,7 +1,10 @@
 package eu.kanade.presentation.library
 
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import eu.kanade.domain.category.model.Category
 import eu.kanade.presentation.components.LibraryBottomActionMenu
 import eu.kanade.presentation.components.Scaffold
 import eu.kanade.presentation.library.components.LibraryContent
@@ -23,9 +26,10 @@ fun LibraryScreen(
     onClickSelectAll: () -> Unit,
     onClickInvertSelection: () -> Unit,
     onClickFilter: () -> Unit,
-    onClickRefresh: () -> Unit,
+    onClickRefresh: (Category?) -> Unit,
 ) {
     Scaffold(
+        modifier = Modifier.safeDrawingPadding(),
         topBar = {
             val title by presenter.getToolbarTitle()
             LibraryToolbar(
@@ -35,7 +39,7 @@ fun LibraryScreen(
                 onClickSelectAll = onClickSelectAll,
                 onClickInvertSelection = onClickInvertSelection,
                 onClickFilter = onClickFilter,
-                onClickRefresh = onClickRefresh,
+                onClickRefresh = { onClickRefresh(null) },
             )
         },
         bottomBar = {
