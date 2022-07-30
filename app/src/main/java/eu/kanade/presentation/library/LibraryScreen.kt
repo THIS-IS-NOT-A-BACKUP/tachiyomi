@@ -53,16 +53,16 @@ fun LibraryScreen(
                         onChangeCategoryClicked = onChangeCategoryClicked,
                         onMarkAsReadClicked = onMarkAsReadClicked,
                         onMarkAsUnreadClicked = onMarkAsUnreadClicked,
-                        onDownloadClicked = onDownloadClicked,
-                        onDeleteClicked = onDeleteClicked.takeIf { presenter.selection.none { it.source == LocalSource.ID } },
+                        onDownloadClicked = onDownloadClicked.takeIf { presenter.selection.none { it.source == LocalSource.ID } },
+                        onDeleteClicked = onDeleteClicked,
                     )
                 },
             ) { paddingValues ->
                 LibraryContent(
                     state = presenter,
                     contentPadding = paddingValues,
-                    currentPage = presenter.activeCategory,
-                    isLibraryEmpty = presenter.loadedManga.isEmpty(),
+                    currentPage = { presenter.activeCategory },
+                    isLibraryEmpty = { presenter.loadedManga.isEmpty() },
                     showPageTabs = presenter.tabVisibility,
                     showMangaCount = presenter.mangaCountVisibility,
                     onChangeCurrentPage = { presenter.activeCategory = it },
