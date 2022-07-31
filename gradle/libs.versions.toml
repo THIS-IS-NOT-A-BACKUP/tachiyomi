@@ -3,7 +3,7 @@ aboutlib_version = "10.3.1"
 okhttp_version = "4.10.0"
 nucleus_version = "3.0.0"
 coil_version = "2.1.0"
-conductor_version = "3.1.5"
+conductor_version = "3.1.7"
 flowbinding_version = "1.2.0"
 shizuku_version = "12.1.0"
 sqldelight = "1.5.3"
@@ -63,7 +63,6 @@ material = "com.google.android.material:material:1.7.0-alpha03"
 androidprocessbutton = "com.github.dmytrodanylyk.android-process-button:library:1.0.4"
 flexible-adapter-core = "com.github.arkon.FlexibleAdapter:flexible-adapter:c8013533"
 flexible-adapter-ui = "com.github.arkon.FlexibleAdapter:flexible-adapter-ui:c8013533"
-viewstatepageradapter = "com.nightlynexus.viewstatepageradapter:viewstatepageradapter:1.1.0"
 photoview = "com.github.chrisbanes:PhotoView:2.3.0"
 directionalviewpager = "com.github.tachiyomiorg:DirectionalViewPager:1.0.0"
 insetter = "dev.chrisbanes.insetter:insetter:0.6.1"
@@ -77,22 +76,22 @@ flowbinding-appcompat = { module = "io.github.reactivecircus.flowbinding:flowbin
 
 logcat = "com.squareup.logcat:logcat:0.1"
 
-acra-http = "ch.acra:acra-http:5.9.5"
+acra-http = "ch.acra:acra-http:5.9.6"
 firebase-analytics = "com.google.firebase:firebase-analytics-ktx:21.1.0"
 
 aboutLibraries-gradle = { module = "com.mikepenz.aboutlibraries.plugin:aboutlibraries-plugin", version.ref = "aboutlib_version" }
-aboutLibraries-compose = { module = "com.mikepenz:aboutlibraries-compose", version.ref ="aboutlib_version" }
+aboutLibraries-compose = { module = "com.mikepenz:aboutlibraries-compose", version.ref = "aboutlib_version" }
 
 shizuku-api = { module = "dev.rikka.shizuku:api", version.ref = "shizuku_version" }
 shizuku-provider = { module = "dev.rikka.shizuku:provider", version.ref = "shizuku_version" }
 
-leakcanary-android = { module = "com.squareup.leakcanary:leakcanary-android", version.ref ="leakcanary" }
-leakcanary-plumber = { module = "com.squareup.leakcanary:plumber-android", version.ref ="leakcanary" }
+leakcanary-android = { module = "com.squareup.leakcanary:leakcanary-android", version.ref = "leakcanary" }
+leakcanary-plumber = { module = "com.squareup.leakcanary:plumber-android", version.ref = "leakcanary" }
 
-sqldelight-android-driver = { module = "com.squareup.sqldelight:android-driver", version.ref ="sqldelight" }
-sqldelight-coroutines = { module = "com.squareup.sqldelight:coroutines-extensions-jvm", version.ref ="sqldelight" }
-sqldelight-android-paging = { module = "com.squareup.sqldelight:android-paging3-extensions", version.ref ="sqldelight" }
-sqldelight-gradle = { module="com.squareup.sqldelight:gradle-plugin", version.ref ="sqldelight" }
+sqldelight-android-driver = { module = "com.squareup.sqldelight:android-driver", version.ref = "sqldelight" }
+sqldelight-coroutines = { module = "com.squareup.sqldelight:coroutines-extensions-jvm", version.ref = "sqldelight" }
+sqldelight-android-paging = { module = "com.squareup.sqldelight:android-paging3-extensions", version.ref = "sqldelight" }
+sqldelight-gradle = { module = "com.squareup.sqldelight:gradle-plugin", version.ref = "sqldelight" }
 
 junit = "org.junit.jupiter:junit-jupiter:5.9.0"
 
