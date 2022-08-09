@@ -166,8 +166,26 @@ class MangaPresenter(
         // Manga info - start
 
         presenterScope.launchIO {
-            if (!getMangaAndChapters.awaitManga(mangaId).favorite) {
+            val manga = getMangaAndChapters.awaitManga(mangaId)
+
+            if (!manga.favorite) {
                 ChapterSettingsHelper.applySettingDefaults(mangaId)
+            }
+
+            // Show what we have earlier.
+            // Defaults set by the block above won't apply until next update but it doesn't matter
+            // since we don't have any chapter yet.
+            _state.update {
+                MangaScreenState.Success(
+                    manga = manga,
+                    source = Injekt.get<SourceManager>().getOrStub(manga.source),
+                    isFromSource = isFromSource,
+                    trackingAvailable = trackManager.hasLoggedServices(),
+                    chapters = emptyList(),
+                    isRefreshingChapter = true,
+                    isIncognitoMode = incognitoMode,
+                    isDownloadedOnlyMode = downloadedOnlyMode,
+                )
             }
 
             getMangaAndChapters.subscribe(mangaId)
@@ -179,22 +197,13 @@ class MangaPresenter(
                         dateRelativeTime = preferences.relativeTime().get(),
                         dateFormat = preferences.dateFormat(),
                     )
-                    _state.update { currentState ->
-                        when (currentState) {
-                            // Initialize success state
-                            MangaScreenState.Loading -> MangaScreenState.Success(
-                                manga = manga,
-                                source = Injekt.get<SourceManager>().getOrStub(manga.source),
-                                isFromSource = isFromSource,
-                                trackingAvailable = trackManager.hasLoggedServices(),
-                                chapters = chapterItems,
-                                isIncognitoMode = incognitoMode,
-                                isDownloadedOnlyMode = downloadedOnlyMode,
-                            )
-
-                            // Update state
-                            is MangaScreenState.Success -> currentState.copy(manga = manga, chapters = chapterItems)
-                        }
+                    updateSuccessState {
+                        it.copy(
+                            manga = manga,
+                            chapters = chapterItems,
+                            isRefreshingChapter = false,
+                            isRefreshingInfo = false,
+                        )
                     }
 
                     observeTrackers()
@@ -744,13 +753,13 @@ class MangaPresenter(
         fromLongPress: Boolean = false,
     ) {
         updateSuccessState { successState ->
-            val modifiedIndex = successState.chapters.indexOfFirst { it.chapter.id == item.chapter.id }
-            if (modifiedIndex < 0) return@updateSuccessState successState
+            val newChapters = successState.processedChapters.toMutableList().apply {
+                val modifiedIndex = successState.processedChapters.indexOfFirst { it == item }
+                if (modifiedIndex < 0) return@apply
 
-            val oldItem = successState.chapters[modifiedIndex]
-            if ((oldItem.selected && selected) || (!oldItem.selected && !selected)) return@updateSuccessState successState
+                val oldItem = get(modifiedIndex)
+                if ((oldItem.selected && selected) || (!oldItem.selected && !selected)) return@apply
 
-            val newChapters = successState.chapters.toMutableList().apply {
                 val firstSelection = none { it.selected }
                 var newItem = removeAt(modifiedIndex)
                 add(modifiedIndex, newItem.copy(selected = selected))
