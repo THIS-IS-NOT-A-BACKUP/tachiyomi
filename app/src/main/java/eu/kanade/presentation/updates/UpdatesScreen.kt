@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FlipToBack
@@ -39,6 +38,7 @@ import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.ChapterDownloadAction
 import eu.kanade.presentation.components.EmptyScreen
+import eu.kanade.presentation.components.LazyColumn
 import eu.kanade.presentation.components.MangaBottomActionMenu
 import eu.kanade.presentation.components.Scaffold
 import eu.kanade.presentation.components.SwipeRefreshIndicator
@@ -68,7 +68,7 @@ fun UpdateScreen(
 ) {
     val updatesListState = rememberLazyListState()
     val insetPaddingValue = WindowInsets.navigationBars
-        .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)
+        .only(WindowInsetsSides.Horizontal)
         .asPaddingValues()
 
     val internalOnBackPressed = {
@@ -119,8 +119,12 @@ fun UpdateScreen(
         },
     ) { contentPadding ->
         // During selection mode bottom nav is not visible
-        val contentPaddingWithNavBar = (if (presenter.selectionMode) PaddingValues() else bottomNavPaddingValues) +
-            contentPadding + WindowInsets.navigationBars.only(WindowInsetsSides.Bottom).asPaddingValues()
+        val contentPaddingWithNavBar = contentPadding +
+            if (presenter.selectionMode) {
+                PaddingValues()
+            } else {
+                bottomNavPaddingValues + WindowInsets.navigationBars.only(WindowInsetsSides.Bottom).asPaddingValues()
+            }
 
         val scope = rememberCoroutineScope()
         var isRefreshing by remember { mutableStateOf(false) }
@@ -151,7 +155,6 @@ fun UpdateScreen(
                 VerticalFastScroller(
                     listState = updatesListState,
                     topContentPadding = contentPaddingWithNavBar.calculateTopPadding(),
-                    bottomContentPadding = contentPaddingWithNavBar.calculateBottomPadding(),
                     endContentPadding = contentPaddingWithNavBar.calculateEndPadding(LocalLayoutDirection.current),
                 ) {
                     LazyColumn(
