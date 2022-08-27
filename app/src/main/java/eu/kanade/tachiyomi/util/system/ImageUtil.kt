@@ -50,8 +50,8 @@ object ImageUtil {
     }
 
     fun findImageType(stream: InputStream): ImageType? {
-        try {
-            return when (getImageType(stream)?.format) {
+        return try {
+            when (getImageType(stream)?.format) {
                 Format.Avif -> ImageType.AVIF
                 Format.Gif -> ImageType.GIF
                 Format.Heif -> ImageType.HEIF
@@ -62,8 +62,8 @@ object ImageUtil {
                 else -> null
             }
         } catch (e: Exception) {
+            null
         }
-        return null
     }
 
     fun getExtensionFromMimeType(mime: String?): String {
@@ -185,7 +185,8 @@ object ImageUtil {
     }
 
     enum class Side {
-        RIGHT, LEFT
+        RIGHT,
+        LEFT,
     }
 
     /**
@@ -206,51 +207,20 @@ object ImageUtil {
             return true
         }
 
-        val options = extractImageOptions(imageFile.openInputStream(), resetAfterExtraction = false).apply { inJustDecodeBounds = false }
-        // Values are stored as they get modified during split loop
-        val imageHeight = options.outHeight
-        val imageWidth = options.outWidth
-
-        val splitHeight = (getDisplayMaxHeightInPx * 1.5).toInt()
-        // -1 so it doesn't try to split when imageHeight = getDisplayHeightInPx
-        val partCount = (imageHeight - 1) / splitHeight + 1
-
-        val optimalSplitHeight = imageHeight / partCount
-
-        val splitDataList = (0 until partCount).fold(mutableListOf<SplitData>()) { list, index ->
-            list.apply {
-                // Only continue if the list is empty or there is image remaining
-                if (isEmpty() || imageHeight > last().bottomOffset) {
-                    val topOffset = index * optimalSplitHeight
-                    var outputImageHeight = min(optimalSplitHeight, imageHeight - topOffset)
-
-                    val remainingHeight = imageHeight - (topOffset + outputImageHeight)
-                    // If remaining height is smaller or equal to 1/3th of
-                    // optimal split height then include it in current page
-                    if (remainingHeight <= (optimalSplitHeight / 3)) {
-                        outputImageHeight += remainingHeight
-                    }
-                    add(SplitData(index, topOffset, outputImageHeight))
-                }
-            }
-        }
-
-        val bitmapRegionDecoder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            BitmapRegionDecoder.newInstance(imageFile.openInputStream())
-        } else {
-            @Suppress("DEPRECATION")
-            BitmapRegionDecoder.newInstance(imageFile.openInputStream(), false)
-        }
-
+        val bitmapRegionDecoder = getBitmapRegionDecoder(imageFile.openInputStream())
         if (bitmapRegionDecoder == null) {
             logcat { "Failed to create new instance of BitmapRegionDecoder" }
             return false
         }
 
-        logcat {
-            "Splitting image with height of $imageHeight into $partCount part " +
-                "with estimated ${optimalSplitHeight}px height per split"
+        val options = extractImageOptions(imageFile.openInputStream(), resetAfterExtraction = false).apply {
+            inJustDecodeBounds = false
         }
+
+        // Values are stored as they get modified during split loop
+        val imageWidth = options.outWidth
+
+        val splitDataList = options.splitData
 
         return try {
             splitDataList.forEach { splitData ->
@@ -284,6 +254,84 @@ object ImageUtil {
 
     private fun splitImagePath(imageFilePath: String, index: Int) =
         imageFilePath.substringBeforeLast(".") + "__${"%03d".format(index + 1)}.jpg"
+
+    /**
+     * Check whether the image is a long Strip that needs splitting
+     * @return true if the image is not animated and it's height is greater than image width and screen height
+     */
+    fun isStripSplitNeeded(imageStream: BufferedInputStream): Boolean {
+        if (isAnimatedAndSupported(imageStream)) return false
+
+        val options = extractImageOptions(imageStream)
+        val imageHeightIsBiggerThanWidth = options.outHeight > options.outWidth
+        val imageHeightBiggerThanScreenHeight = options.outHeight > getDisplayMaxHeightInPx
+        return imageHeightIsBiggerThanWidth && imageHeightBiggerThanScreenHeight
+    }
+
+    /**
+     * Split the imageStream according to the provided splitData
+     */
+    fun splitStrip(imageStream: InputStream, splitData: SplitData): InputStream {
+        val bitmapRegionDecoder = getBitmapRegionDecoder(imageStream)
+            ?: throw Exception("Failed to create new instance of BitmapRegionDecoder")
+
+        logcat {
+            "WebtoonSplit #${splitData.index} with topOffset=${splitData.topOffset} " +
+                "outputImageHeight=${splitData.outputImageHeight} bottomOffset=${splitData.bottomOffset}"
+        }
+
+        val options = extractImageOptions(imageStream).apply { inJustDecodeBounds = false }
+
+        val region = Rect(0, splitData.topOffset, splitData.outputImageHeight, splitData.bottomOffset)
+
+        try {
+            val splitBitmap = bitmapRegionDecoder.decodeRegion(region, options)
+            val outputStream = ByteArrayOutputStream()
+            splitBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+            return ByteArrayInputStream(outputStream.toByteArray())
+        } catch (e: Throwable) {
+            throw e
+        } finally {
+            bitmapRegionDecoder.recycle()
+        }
+    }
+
+    fun getSplitDataForStream(imageStream: InputStream): List<SplitData> {
+        return extractImageOptions(imageStream).splitData
+    }
+
+    private val BitmapFactory.Options.splitData
+        get(): List<SplitData> {
+            val imageHeight = outHeight
+
+            val splitHeight = (getDisplayMaxHeightInPx * 1.5).toInt()
+            // -1 so it doesn't try to split when imageHeight = splitHeight
+            val partCount = (imageHeight - 1) / splitHeight + 1
+            val optimalSplitHeight = imageHeight / partCount
+
+            logcat {
+                "Generating SplitData for image (height: $imageHeight): " +
+                    "$partCount parts @ ${optimalSplitHeight}px height per part"
+            }
+
+            return mutableListOf<SplitData>().apply {
+                for (index in (0 until partCount)) {
+                    // Only continue if the list is empty or there is image remaining
+                    if (isNotEmpty() && imageHeight <= last().bottomOffset) break
+
+                    val topOffset = index * optimalSplitHeight
+                    var outputImageHeight = min(optimalSplitHeight, imageHeight - topOffset)
+
+                    val remainingHeight = imageHeight - (topOffset + outputImageHeight)
+                    // If remaining height is smaller or equal to 1/10th of
+                    // optimal split height then include it in current page
+                    if (remainingHeight <= (optimalSplitHeight / 10)) {
+                        outputImageHeight += remainingHeight
+                    }
+                    add(SplitData(index, topOffset, outputImageHeight))
+                }
+            }
+        }
 
     data class SplitData(
         val index: Int,
@@ -522,6 +570,15 @@ object ImageUtil {
         BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size, options)
         if (resetAfterExtraction) imageStream.reset()
         return options
+    }
+
+    private fun getBitmapRegionDecoder(imageStream: InputStream): BitmapRegionDecoder? {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            BitmapRegionDecoder.newInstance(imageStream)
+        } else {
+            @Suppress("DEPRECATION")
+            BitmapRegionDecoder.newInstance(imageStream, false)
+        }
     }
 
     // Android doesn't include some mappings
