@@ -219,6 +219,7 @@ class PreferencesHelper(val context: Context) {
     fun removeExcludeCategories() = flowPrefs.getStringSet("remove_exclude_categories", emptySet())
 
     fun libraryUpdateInterval() = flowPrefs.getInt("pref_library_update_interval_key", 24)
+    fun libraryUpdateLastTimestamp() = flowPrefs.getLong("library_update_last_timestamp", 0L)
 
     fun libraryUpdateDeviceRestriction() = flowPrefs.getStringSet("library_update_restriction", setOf(DEVICE_ONLY_ON_WIFI))
     fun libraryUpdateMangaRestriction() = flowPrefs.getStringSet("library_update_manga_restriction", setOf(MANGA_HAS_UNREAD, MANGA_NON_COMPLETED, MANGA_NON_READ))
@@ -297,8 +298,6 @@ class PreferencesHelper(val context: Context) {
     fun dohProvider() = prefs.getInt(Keys.dohProvider, -1)
 
     fun defaultUserAgent() = flowPrefs.getString(Keys.defaultUserAgent, "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:103.0) Gecko/20100101 Firefox/103.0")
-
-    fun lastSearchQuerySearchSettings() = flowPrefs.getString("last_search_query", "")
 
     fun filterChapterByRead() = prefs.getInt(Keys.defaultChapterFilterByRead, DomainManga.SHOW_ALL.toInt())
 
