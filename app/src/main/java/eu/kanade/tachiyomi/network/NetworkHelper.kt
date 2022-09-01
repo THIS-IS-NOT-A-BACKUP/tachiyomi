@@ -3,6 +3,7 @@ package eu.kanade.tachiyomi.network
 import android.content.Context
 import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.network.interceptor.CloudflareInterceptor
+import eu.kanade.tachiyomi.network.interceptor.Http103Interceptor
 import eu.kanade.tachiyomi.network.interceptor.UserAgentInterceptor
 import okhttp3.Cache
 import okhttp3.OkHttpClient
@@ -16,10 +17,13 @@ class NetworkHelper(context: Context) {
     private val preferences: PreferencesHelper by injectLazy()
 
     private val cacheDir = File(context.cacheDir, "network_cache")
-
     private val cacheSize = 5L * 1024 * 1024 // 5 MiB
 
     val cookieManager = AndroidCookieJar()
+
+    private val userAgentInterceptor by lazy { UserAgentInterceptor() }
+    private val http103Interceptor by lazy { Http103Interceptor(context) }
+    private val cloudflareInterceptor by lazy { CloudflareInterceptor(context) }
 
     private val baseClientBuilder: OkHttpClient.Builder
         get() {
@@ -28,8 +32,9 @@ class NetworkHelper(context: Context) {
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
                 .callTimeout(2, TimeUnit.MINUTES)
-                // .fastFallback(true) // TODO: re-enable when OkHttp 5 is stabler
-                .addInterceptor(UserAgentInterceptor())
+                .fastFallback(true)
+                .addInterceptor(userAgentInterceptor)
+                .addNetworkInterceptor(http103Interceptor)
 
             if (preferences.verboseLogging()) {
                 val httpLoggingInterceptor = HttpLoggingInterceptor().apply {
@@ -60,7 +65,7 @@ class NetworkHelper(context: Context) {
     @Suppress("UNUSED")
     val cloudflareClient by lazy {
         client.newBuilder()
-            .addInterceptor(CloudflareInterceptor(context))
+            .addInterceptor(cloudflareInterceptor)
             .build()
     }
 
