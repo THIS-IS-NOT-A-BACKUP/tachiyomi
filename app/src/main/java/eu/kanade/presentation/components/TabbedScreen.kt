@@ -21,6 +21,10 @@ fun TabbedScreen(
     @StringRes titleRes: Int,
     tabs: List<TabContent>,
     startIndex: Int? = null,
+    searchQuery: String? = null,
+    onChangeSearchQuery: (String?) -> Unit = {},
+    incognitoMode: Boolean,
+    downloadedOnlyMode: Boolean,
 ) {
     val scope = rememberCoroutineScope()
     val state = rememberPagerState()
@@ -33,12 +37,27 @@ fun TabbedScreen(
 
     Scaffold(
         topBar = {
-            AppBar(
-                title = stringResource(titleRes),
-                actions = {
-                    AppBarActions(tabs[state.currentPage].actions)
-                },
-            )
+            if (searchQuery == null) {
+                AppBar(
+                    title = stringResource(titleRes),
+                    actions = {
+                        AppBarActions(tabs[state.currentPage].actions)
+                    },
+                )
+            } else {
+                SearchToolbar(
+                    searchQuery = searchQuery,
+                    onChangeSearchQuery = {
+                        onChangeSearchQuery(it)
+                    },
+                    onClickCloseSearch = {
+                        onChangeSearchQuery(null)
+                    },
+                    onClickResetSearch = {
+                        onChangeSearchQuery("")
+                    },
+                )
+            }
         },
     ) { paddingValues ->
         Column(modifier = Modifier.padding(paddingValues)) {
@@ -55,6 +74,13 @@ fun TabbedScreen(
                         },
                     )
                 }
+            }
+
+            if (downloadedOnlyMode) {
+                DownloadedOnlyModeBanner()
+            }
+            if (incognitoMode) {
+                IncognitoModeBanner()
             }
 
             HorizontalPager(
