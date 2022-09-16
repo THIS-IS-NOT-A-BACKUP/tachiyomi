@@ -19,6 +19,7 @@ import eu.kanade.tachiyomi.ui.reader.setting.ReadingModeType
 import eu.kanade.tachiyomi.util.system.DeviceUtil
 import eu.kanade.tachiyomi.util.system.LocaleHelper
 import eu.kanade.tachiyomi.util.system.isDevFlavor
+import eu.kanade.tachiyomi.util.system.isDynamicColorAvailable
 import eu.kanade.tachiyomi.widget.ExtendedNavigationView
 import java.io.File
 import java.text.DateFormat
@@ -213,7 +214,7 @@ class PreferencesHelper(val context: Context) {
 
     fun numberOfBackups() = flowPrefs.getInt("backup_slots", 2)
 
-    fun backupInterval() = flowPrefs.getInt("backup_interval", 0)
+    fun backupInterval() = flowPrefs.getInt("backup_interval", 12)
 
     fun removeAfterReadSlots() = prefs.getInt(Keys.removeAfterReadSlots, -1)
 

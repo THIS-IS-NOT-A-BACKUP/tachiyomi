@@ -27,7 +27,7 @@ android {
         applicationId = "eu.kanade.tachiyomi"
         minSdk = AndroidConfig.minSdk
         targetSdk = AndroidConfig.targetSdk
-        versionCode = 83
+        versionCode = 84
         versionName = "0.13.6"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
@@ -150,6 +150,8 @@ android {
 
 dependencies {
     implementation(project(":i18n"))
+    implementation(project(":core"))
+    implementation(project(":source-api"))
 
     // Compose
     implementation(compose.activity)
