@@ -4,6 +4,8 @@ import android.content.Context
 import android.os.Build
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
+import eu.kanade.domain.source.service.SourcePreferences
+import eu.kanade.tachiyomi.core.security.SecurityPreferences
 import eu.kanade.tachiyomi.data.backup.BackupCreatorJob
 import eu.kanade.tachiyomi.data.library.LibraryUpdateJob
 import eu.kanade.tachiyomi.data.preference.MANGA_NON_COMPLETED
@@ -37,6 +39,8 @@ object Migrations {
         context: Context,
         preferences: PreferencesHelper,
         networkPreferences: NetworkPreferences,
+        sourcePreferences: SourcePreferences,
+        securityPreferences: SecurityPreferences,
     ): Boolean {
         val oldVersion = preferences.lastVersionCode().get()
         if (oldVersion < BuildConfig.VERSION_CODE) {
@@ -166,7 +170,7 @@ object Migrations {
                 }
             }
             if (oldVersion < 60) {
-                // Re-enable update check that was prevously accidentally disabled for M
+                // Re-enable update check that was previously accidentally disabled for M
                 if (BuildConfig.INCLUDE_UPDATER && Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
                     AppUpdateJob.setupTask(context)
                 }
@@ -231,8 +235,8 @@ object Migrations {
                 }
             }
             if (oldVersion < 70) {
-                if (preferences.enabledLanguages().isSet()) {
-                    preferences.enabledLanguages() += "all"
+                if (sourcePreferences.enabledLanguages().isSet()) {
+                    sourcePreferences.enabledLanguages() += "all"
                 }
             }
             if (oldVersion < 71) {
@@ -252,7 +256,7 @@ object Migrations {
             if (oldVersion < 75) {
                 val oldSecureScreen = prefs.getBoolean("secure_screen", false)
                 if (oldSecureScreen) {
-                    preferences.secureScreen().set(PreferenceValues.SecureScreenMode.ALWAYS)
+                    securityPreferences.secureScreen().set(SecurityPreferences.SecureScreenMode.ALWAYS)
                 }
                 if (DeviceUtil.isMiui && preferences.extensionInstaller().get() == PreferenceValues.ExtensionInstaller.PACKAGEINSTALLER) {
                     preferences.extensionInstaller().set(PreferenceValues.ExtensionInstaller.LEGACY)

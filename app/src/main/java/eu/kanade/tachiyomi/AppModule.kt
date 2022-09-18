@@ -13,8 +13,10 @@ import eu.kanade.data.AndroidDatabaseHandler
 import eu.kanade.data.DatabaseHandler
 import eu.kanade.data.dateAdapter
 import eu.kanade.data.listOfStringsAdapter
+import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.tachiyomi.core.preference.AndroidPreferenceStore
 import eu.kanade.tachiyomi.core.preference.PreferenceStore
+import eu.kanade.tachiyomi.core.security.SecurityPreferences
 import eu.kanade.tachiyomi.data.cache.ChapterCache
 import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
@@ -29,6 +31,8 @@ import eu.kanade.tachiyomi.source.SourceManager
 import eu.kanade.tachiyomi.util.system.isDevFlavor
 import io.requery.android.database.sqlite.RequerySQLiteOpenHelperFactory
 import kotlinx.serialization.json.Json
+import nl.adaptivity.xmlutil.serialization.UnknownChildHandler
+import nl.adaptivity.xmlutil.serialization.XML
 import uy.kohesive.injekt.api.InjektModule
 import uy.kohesive.injekt.api.InjektRegistrar
 import uy.kohesive.injekt.api.addSingleton
@@ -88,6 +92,13 @@ class AppModule(val app: Application) : InjektModule {
             }
         }
 
+        addSingletonFactory {
+            XML {
+                unknownChildHandler = UnknownChildHandler { _, _, _, _, _ -> emptyList() }
+                autoPolymorphic = true
+            }
+        }
+
         addSingletonFactory { ChapterCache(app) }
 
         addSingletonFactory { CoverCache(app) }
@@ -129,6 +140,12 @@ class PreferenceModule(val application: Application) : InjektModule {
                 preferenceStore = get(),
                 verboseLogging = isDevFlavor,
             )
+        }
+        addSingletonFactory {
+            SourcePreferences(get())
+        }
+        addSingletonFactory {
+            SecurityPreferences(get())
         }
         addSingletonFactory {
             PreferencesHelper(
