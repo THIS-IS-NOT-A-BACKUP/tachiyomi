@@ -1,9 +1,6 @@
 package eu.kanade.presentation.browse
 
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
@@ -17,7 +14,6 @@ import eu.kanade.presentation.components.LazyColumn
 import eu.kanade.presentation.components.LoadingScreen
 import eu.kanade.presentation.components.PreferenceRow
 import eu.kanade.presentation.components.Scaffold
-import eu.kanade.presentation.util.plus
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.ui.browse.extension.ExtensionFilterPresenter
 import eu.kanade.tachiyomi.util.system.LocaleHelper
@@ -38,13 +34,13 @@ fun ExtensionFilterScreen(
                 scrollBehavior = scrollBehavior,
             )
         },
-    ) { paddingValues ->
+    ) { contentPadding ->
         when {
             presenter.isLoading -> LoadingScreen()
             presenter.isEmpty -> EmptyScreen(textResource = R.string.empty_screen)
             else -> {
                 SourceFilterContent(
-                    paddingValues = paddingValues,
+                    contentPadding = contentPadding,
                     state = presenter,
                     onClickLang = {
                         presenter.toggleLanguage(it)
@@ -65,13 +61,13 @@ fun ExtensionFilterScreen(
 }
 
 @Composable
-fun SourceFilterContent(
-    paddingValues: PaddingValues,
+private fun SourceFilterContent(
+    contentPadding: PaddingValues,
     state: ExtensionFilterState,
     onClickLang: (String) -> Unit,
 ) {
     LazyColumn(
-        contentPadding = paddingValues + WindowInsets.navigationBars.asPaddingValues(),
+        contentPadding = contentPadding,
     ) {
         items(
             items = state.items,
@@ -87,7 +83,7 @@ fun SourceFilterContent(
 }
 
 @Composable
-fun ExtensionFilterItem(
+private fun ExtensionFilterItem(
     modifier: Modifier,
     lang: String,
     enabled: Boolean,
