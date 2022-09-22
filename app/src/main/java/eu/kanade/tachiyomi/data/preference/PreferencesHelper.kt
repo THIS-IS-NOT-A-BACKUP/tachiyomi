@@ -2,15 +2,11 @@ package eu.kanade.tachiyomi.data.preference
 
 import android.content.Context
 import android.os.Build
-import android.os.Environment
-import androidx.core.net.toUri
-import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.core.preference.PreferenceStore
 import eu.kanade.tachiyomi.core.preference.getEnum
 import eu.kanade.tachiyomi.data.database.models.Manga
 import eu.kanade.tachiyomi.util.system.DeviceUtil
 import eu.kanade.tachiyomi.util.system.isDynamicColorAvailable
-import java.io.File
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -22,18 +18,6 @@ class PreferencesHelper(
     val context: Context,
     private val preferenceStore: PreferenceStore,
 ) {
-
-    private val defaultDownloadsDir = File(
-        Environment.getExternalStorageDirectory().absolutePath + File.separator +
-            context.getString(R.string.app_name),
-        "downloads",
-    ).toUri()
-
-    private val defaultBackupDir = File(
-        Environment.getExternalStorageDirectory().absolutePath + File.separator +
-            context.getString(R.string.app_name),
-        "backup",
-    ).toUri()
 
     fun confirmExit() = preferenceStore.getBoolean("pref_confirm_exit", false)
 
@@ -53,8 +37,6 @@ class PreferencesHelper(
 
     fun lastVersionCode() = preferenceStore.getInt("last_version_code", 0)
 
-    fun backupsDirectory() = preferenceStore.getString("backup_directory", defaultBackupDir.toString())
-
     fun relativeTime() = preferenceStore.getInt("relative_time", 7)
 
     fun dateFormat(format: String = preferenceStore.getString(Keys.dateFormat, "").get()): DateFormat = when (format) {
@@ -62,39 +44,12 @@ class PreferencesHelper(
         else -> SimpleDateFormat(format, Locale.getDefault())
     }
 
-    fun downloadsDirectory() = preferenceStore.getString("download_directory", defaultDownloadsDir.toString())
-
-    fun downloadOnlyOverWifi() = preferenceStore.getBoolean("pref_download_only_over_wifi_key", true)
-
-    fun saveChaptersAsCBZ() = preferenceStore.getBoolean("save_chapter_as_cbz", true)
-
-    fun splitTallImages() = preferenceStore.getBoolean("split_tall_images", false)
-
-    fun numberOfBackups() = preferenceStore.getInt("backup_slots", 2)
-
-    fun backupInterval() = preferenceStore.getInt("backup_interval", 12)
-
-    fun removeAfterReadSlots() = preferenceStore.getInt("remove_after_read_slots", -1)
-
-    fun removeAfterMarkedAsRead() = preferenceStore.getBoolean("pref_remove_after_marked_as_read_key", false)
-
-    fun removeBookmarkedChapters() = preferenceStore.getBoolean("pref_remove_bookmarked", false)
-
-    fun removeExcludeCategories() = preferenceStore.getStringSet("remove_exclude_categories", emptySet())
-
     fun downloadedOnly() = preferenceStore.getBoolean("pref_downloaded_only", false)
 
     fun automaticExtUpdates() = preferenceStore.getBoolean("automatic_ext_updates", true)
 
     fun lastAppCheck() = preferenceStore.getLong("last_app_check", 0)
     fun lastExtCheck() = preferenceStore.getLong("last_ext_check", 0)
-
-    fun downloadNewChapters() = preferenceStore.getBoolean("download_new", false)
-
-    fun downloadNewChapterCategories() = preferenceStore.getStringSet("download_new_categories", emptySet())
-    fun downloadNewChapterCategoriesExclude() = preferenceStore.getStringSet("download_new_categories_exclude", emptySet())
-
-    fun autoDownloadWhileReading() = preferenceStore.getInt("auto_download_while_reading", 0)
 
     fun migrateFlags() = preferenceStore.getInt("migrate_flags", Int.MAX_VALUE)
 
