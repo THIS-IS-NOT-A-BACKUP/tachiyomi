@@ -2,10 +2,8 @@ package eu.kanade.presentation.browse
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -40,12 +38,12 @@ import eu.kanade.tachiyomi.source.LocalSource
 import eu.kanade.tachiyomi.ui.browse.source.SourcesPresenter
 import eu.kanade.tachiyomi.util.system.LocaleHelper
 import eu.kanade.tachiyomi.util.system.toast
-import eu.kanade.tachiyomi.widget.TachiyomiBottomNavigationView.Companion.bottomNavPadding
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun SourcesScreen(
     presenter: SourcesPresenter,
+    contentPadding: PaddingValues,
     onClickItem: (Source, String) -> Unit,
     onClickDisable: (Source) -> Unit,
     onClickPin: (Source) -> Unit,
@@ -53,10 +51,14 @@ fun SourcesScreen(
     val context = LocalContext.current
     when {
         presenter.isLoading -> LoadingScreen()
-        presenter.isEmpty -> EmptyScreen(R.string.source_empty_screen)
+        presenter.isEmpty -> EmptyScreen(
+            textResource = R.string.source_empty_screen,
+            modifier = Modifier.padding(contentPadding),
+        )
         else -> {
             SourceList(
                 state = presenter,
+                contentPadding = contentPadding,
                 onClickItem = onClickItem,
                 onClickDisable = onClickDisable,
                 onClickPin = onClickPin,
@@ -77,12 +79,13 @@ fun SourcesScreen(
 @Composable
 private fun SourceList(
     state: SourcesState,
+    contentPadding: PaddingValues,
     onClickItem: (Source, String) -> Unit,
     onClickDisable: (Source) -> Unit,
     onClickPin: (Source) -> Unit,
 ) {
     ScrollbarLazyColumn(
-        contentPadding = bottomNavPadding + WindowInsets.navigationBars.asPaddingValues() + topPaddingValues,
+        contentPadding = contentPadding + topPaddingValues,
     ) {
         items(
             items = state.items,
@@ -187,11 +190,12 @@ private fun SourcePinButton(
 ) {
     val icon = if (isPinned) Icons.Filled.PushPin else Icons.Outlined.PushPin
     val tint = if (isPinned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
+    val description = if (isPinned) R.string.action_unpin else R.string.action_pin
     IconButton(onClick = onClick) {
         Icon(
             imageVector = icon,
-            contentDescription = "",
             tint = tint,
+            contentDescription = stringResource(description),
         )
     }
 }
