@@ -20,6 +20,7 @@ import eu.kanade.domain.base.BasePreferences
 import eu.kanade.domain.category.interactor.GetCategories
 import eu.kanade.domain.category.interactor.SetMangaCategories
 import eu.kanade.domain.category.model.Category
+import eu.kanade.domain.chapter.interactor.GetBookmarkedChaptersByMangaId
 import eu.kanade.domain.chapter.interactor.GetChapterByMangaId
 import eu.kanade.domain.chapter.interactor.SetReadStatus
 import eu.kanade.domain.chapter.model.toDbChapter
@@ -85,6 +86,7 @@ class LibraryPresenter(
     private val getLibraryManga: GetLibraryManga = Injekt.get(),
     private val getTracks: GetTracks = Injekt.get(),
     private val getCategories: GetCategories = Injekt.get(),
+    private val getBookmarkedChaptersByMangaId: GetBookmarkedChaptersByMangaId = Injekt.get(),
     private val getChapterByMangaId: GetChapterByMangaId = Injekt.get(),
     private val setReadStatus: SetReadStatus = Injekt.get(),
     private val updateManga: UpdateManga = Injekt.get(),
@@ -174,6 +176,7 @@ class LibraryPresenter(
         val filterDownloaded = libraryPreferences.filterDownloaded().get()
         val filterUnread = libraryPreferences.filterUnread().get()
         val filterStarted = libraryPreferences.filterStarted().get()
+        val filterBookmarked = libraryPreferences.filterBookmarked().get()
         val filterCompleted = libraryPreferences.filterCompleted().get()
         val loggedInServices = trackManager.services.filter { trackService -> trackService.isLogged }
             .associate { trackService ->
@@ -218,6 +221,19 @@ class LibraryPresenter(
             }
         }
 
+        val filterFnBookmarked: (LibraryItem) -> Boolean = bookmarked@{ item ->
+            if (filterBookmarked == State.IGNORE.value) return@bookmarked true
+            return@bookmarked runBlocking {
+                val isBookmarked = getBookmarkedChaptersByMangaId.await(item.libraryManga.manga.id).isNotEmpty()
+
+                return@runBlocking if (filterBookmarked == State.INCLUDE.value) {
+                    isBookmarked
+                } else {
+                    !isBookmarked
+                }
+            }
+        }
+
         val filterFnCompleted: (LibraryItem) -> Boolean = completed@{ item ->
             if (filterCompleted == State.IGNORE.value) return@completed true
             val isCompleted = item.libraryManga.manga.status.toInt() == SManga.COMPLETED
@@ -258,6 +274,7 @@ class LibraryPresenter(
                 !filterFnDownloaded(item) ||
                     !filterFnUnread(item) ||
                     !filterFnStarted(item) ||
+                    !filterFnBookmarked(item) ||
                     !filterFnCompleted(item) ||
                     !filterFnTracking(item)
                 )
@@ -662,10 +679,38 @@ class LibraryPresenter(
         state.selection = emptyList()
     }
 
+    private fun removeSelected(mutableList: MutableList<LibraryManga>, manga: LibraryManga): Boolean {
+        if (selection.fastAny { it.manga.id == manga.manga.id }) {
+            return mutableList.remove(manga)
+        }
+        return false
+    }
+
     fun toggleSelection(manga: LibraryManga) {
         val mutableList = state.selection.toMutableList()
-        if (selection.fastAny { it.manga.id == manga.manga.id }) {
-            mutableList.remove(manga)
+        if (!removeSelected(mutableList, manga)) {
+            mutableList.add(manga)
+        }
+        state.selection = mutableList
+    }
+
+    /**
+     * Selects all mangas between and including the given manga and the last pressed manga from the
+     * same category as the given manga
+     */
+    fun toggleRangeSelection(manga: LibraryManga) {
+        val mutableList = state.selection.toMutableList()
+        if (!removeSelected(mutableList, manga) && mutableList.fastAny
+            { it.category == manga.category }
+        ) {
+            val items = (loadedManga[manga.category] ?: emptyList()).map { it.libraryManga }
+            val lastMangaIndex = items.indexOf(mutableList.findLast { it.category == manga.category })
+            val curMangaIndex = items.indexOf(manga)
+            val newList = when (lastMangaIndex >= curMangaIndex + 1) {
+                true -> items.subList(curMangaIndex, lastMangaIndex)
+                false -> items.subList(lastMangaIndex, curMangaIndex + 1)
+            }
+            mutableList.addAll(newList.filterNot { it in selection })
         } else {
             mutableList.add(manga)
         }
