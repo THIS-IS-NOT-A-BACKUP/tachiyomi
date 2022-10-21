@@ -17,6 +17,7 @@ import eu.kanade.tachiyomi.data.preference.PreferenceValues.TappingInvertMode
 import eu.kanade.tachiyomi.ui.reader.setting.OrientationType
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingModeType
+import eu.kanade.tachiyomi.util.system.isReleaseFlavor
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -67,6 +68,7 @@ class SettingsReaderScreen : SearchableSettings {
                 title = stringResource(R.string.pref_page_transitions),
             ),
             getDisplayGroup(readerPreferences = readerPref),
+            getReadingGroup(readerPreferences = readerPref),
             getPagedGroup(readerPreferences = readerPref),
             getWebtoonGroup(readerPreferences = readerPref),
             getNavigationGroup(readerPreferences = readerPref),
@@ -115,6 +117,27 @@ class SettingsReaderScreen : SearchableSettings {
                 Preference.PreferenceItem.SwitchPreference(
                     pref = readerPreferences.showPageNumber(),
                     title = stringResource(R.string.pref_show_page_number),
+                ),
+            ),
+        )
+    }
+
+    @Composable
+    private fun getReadingGroup(readerPreferences: ReaderPreferences): Preference.PreferenceGroup {
+        return Preference.PreferenceGroup(
+            title = stringResource(R.string.pref_category_reading),
+            preferenceItems = listOf(
+                Preference.PreferenceItem.SwitchPreference(
+                    pref = readerPreferences.skipRead(),
+                    title = stringResource(R.string.pref_skip_read_chapters),
+                ),
+                Preference.PreferenceItem.SwitchPreference(
+                    pref = readerPreferences.skipFiltered(),
+                    title = stringResource(R.string.pref_skip_filtered_chapters),
+                ),
+                Preference.PreferenceItem.SwitchPreference(
+                    pref = readerPreferences.alwaysShowChapterTransition(),
+                    title = stringResource(R.string.pref_always_show_chapter_transition),
                 ),
             ),
         )
@@ -271,6 +294,7 @@ class SettingsReaderScreen : SearchableSettings {
                     pref = readerPreferences.longStripSplitWebtoon(),
                     title = stringResource(R.string.pref_long_strip_split),
                     subtitle = stringResource(R.string.split_tall_images_summary),
+                    enabled = !isReleaseFlavor, // TODO: Show in release build when the feature is stable
                 ),
             ),
         )
@@ -308,6 +332,7 @@ class SettingsReaderScreen : SearchableSettings {
                 Preference.PreferenceItem.SwitchPreference(
                     pref = readerPreferences.folderPerManga(),
                     title = stringResource(R.string.pref_create_folder_per_manga),
+                    subtitle = stringResource(R.string.pref_create_folder_per_manga_summary),
                 ),
             ),
         )
