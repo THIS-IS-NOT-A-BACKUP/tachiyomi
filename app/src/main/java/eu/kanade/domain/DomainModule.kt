@@ -63,6 +63,7 @@ import eu.kanade.domain.source.repository.SourceDataRepository
 import eu.kanade.domain.source.repository.SourceRepository
 import eu.kanade.domain.track.interactor.DeleteTrack
 import eu.kanade.domain.track.interactor.GetTracks
+import eu.kanade.domain.track.interactor.GetTracksPerManga
 import eu.kanade.domain.track.interactor.InsertTrack
 import eu.kanade.domain.track.repository.TrackRepository
 import eu.kanade.domain.updates.interactor.GetUpdates
@@ -93,7 +94,7 @@ class DomainModule : InjektModule {
         addFactory { GetLibraryManga(get()) }
         addFactory { GetMangaWithChapters(get(), get()) }
         addFactory { GetManga(get()) }
-        addFactory { GetNextChapter(get()) }
+        addFactory { GetNextChapter(get(), get(), get(), get()) }
         addFactory { ResetViewerFlags(get()) }
         addFactory { SetMangaChapterFlags(get()) }
         addFactory { SetMangaDefaultChapterFlags(get(), get(), get()) }
@@ -104,6 +105,7 @@ class DomainModule : InjektModule {
 
         addSingletonFactory<TrackRepository> { TrackRepositoryImpl(get()) }
         addFactory { DeleteTrack(get()) }
+        addFactory { GetTracksPerManga(get()) }
         addFactory { GetTracks(get()) }
         addFactory { InsertTrack(get()) }
 
