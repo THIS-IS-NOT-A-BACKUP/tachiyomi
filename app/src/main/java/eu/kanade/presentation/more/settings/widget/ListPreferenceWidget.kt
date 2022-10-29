@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -26,6 +25,7 @@ import eu.kanade.presentation.components.ScrollbarLazyColumn
 import eu.kanade.presentation.util.isScrolledToEnd
 import eu.kanade.presentation.util.isScrolledToStart
 import eu.kanade.presentation.util.minimumTouchTargetSize
+import eu.kanade.tachiyomi.R
 
 @Composable
 fun <T> ListPreferenceWidget(
@@ -40,7 +40,7 @@ fun <T> ListPreferenceWidget(
 
     TextPreferenceWidget(
         title = title,
-        subtitle = subtitle?.format(entries[value]),
+        subtitle = subtitle,
         icon = icon,
         onPreferenceClick = { showDialog(true) },
     )
@@ -73,7 +73,7 @@ fun <T> ListPreferenceWidget(
             },
             confirmButton = {
                 TextButton(onClick = { showDialog(false) }) {
-                    Text(text = stringResource(android.R.string.cancel))
+                    Text(text = stringResource(R.string.action_cancel))
                 }
             },
         )
@@ -89,7 +89,7 @@ private fun DialogRow(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
+            .clip(MaterialTheme.shapes.small)
             .selectable(
                 selected = isSelected,
                 onClick = { if (!isSelected) onSelected() },

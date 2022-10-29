@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import eu.kanade.presentation.more.settings.Preference
 import eu.kanade.presentation.util.minimumTouchTargetSize
+import eu.kanade.tachiyomi.R
 
 @Composable
 fun MultiSelectListPreferenceWidget(
@@ -34,7 +34,7 @@ fun MultiSelectListPreferenceWidget(
 
     TextPreferenceWidget(
         title = preference.title,
-        subtitle = preference.subtitle,
+        subtitle = preference.subtitleProvider(values, preference.entries),
         icon = preference.icon,
         onPreferenceClick = { showDialog(true) },
     )
@@ -62,7 +62,7 @@ fun MultiSelectListPreferenceWidget(
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
+                                    .clip(MaterialTheme.shapes.small)
                                     .selectable(
                                         selected = isSelected,
                                         onClick = { onSelectionChanged() },
@@ -99,7 +99,7 @@ fun MultiSelectListPreferenceWidget(
             },
             dismissButton = {
                 TextButton(onClick = { showDialog(false) }) {
-                    Text(text = stringResource(android.R.string.cancel))
+                    Text(text = stringResource(R.string.action_cancel))
                 }
             },
         )

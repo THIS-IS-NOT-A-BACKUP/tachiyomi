@@ -27,8 +27,8 @@ android {
         applicationId = "eu.kanade.tachiyomi"
         minSdk = AndroidConfig.minSdk
         targetSdk = AndroidConfig.targetSdk
-        versionCode = 89
-        versionName = "0.14.0"
+        versionCode = 90
+        versionName = "0.14.1"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
         buildConfigField("String", "COMMIT_SHA", "\"${getGitSha()}\"")
@@ -176,8 +176,6 @@ dependencies {
     implementation(compose.accompanist.webview)
     implementation(compose.accompanist.swiperefresh)
     implementation(compose.accompanist.flowlayout)
-    implementation(compose.accompanist.pager.core)
-    implementation(compose.accompanist.pager.indicators)
     implementation(compose.accompanist.permissions)
 
     implementation(androidx.paging.runtime)
@@ -329,6 +327,19 @@ tasks {
             "-opt-in=kotlinx.coroutines.InternalCoroutinesApi",
             "-opt-in=kotlinx.serialization.ExperimentalSerializationApi",
         )
+
+        if (project.findProperty("tachiyomi.enableComposeCompilerMetrics") == "true") {
+            kotlinOptions.freeCompilerArgs += listOf(
+                "-P",
+                "plugin:androidx.compose.compiler.plugins.kotlin:reportsDestination=" +
+                    project.buildDir.absolutePath + "/compose_metrics"
+            )
+            kotlinOptions.freeCompilerArgs += listOf(
+                "-P",
+                "plugin:androidx.compose.compiler.plugins.kotlin:metricsDestination=" +
+                    project.buildDir.absolutePath + "/compose_metrics"
+            )
+        }
     }
 
     preBuild {
