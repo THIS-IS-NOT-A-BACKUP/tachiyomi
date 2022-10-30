@@ -2,11 +2,8 @@ package eu.kanade.presentation.updates
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FlipToBack
 import androidx.compose.material.icons.outlined.Refresh
@@ -23,17 +20,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.util.fastAll
+import androidx.compose.ui.util.fastAny
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.ChapterDownloadAction
 import eu.kanade.presentation.components.EmptyScreen
-import eu.kanade.presentation.components.LazyColumn
+import eu.kanade.presentation.components.FastScrollLazyColumn
 import eu.kanade.presentation.components.LoadingScreen
 import eu.kanade.presentation.components.MangaBottomActionMenu
 import eu.kanade.presentation.components.Scaffold
 import eu.kanade.presentation.components.SwipeRefresh
-import eu.kanade.presentation.components.VerticalFastScroller
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.download.model.Download
 import eu.kanade.tachiyomi.data.library.LibraryUpdateService
@@ -124,7 +121,6 @@ private fun UpdateScreenContent(
     onClickCover: (UpdatesItem) -> Unit,
 ) {
     val context = LocalContext.current
-    val updatesListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     var isRefreshing by remember { mutableStateOf(false) }
 
@@ -143,34 +139,26 @@ private fun UpdateScreenContent(
         enabled = presenter.selectionMode.not(),
         indicatorPadding = contentPadding,
     ) {
-        VerticalFastScroller(
-            listState = updatesListState,
-            topContentPadding = contentPadding.calculateTopPadding(),
-            endContentPadding = contentPadding.calculateEndPadding(LocalLayoutDirection.current),
+        FastScrollLazyColumn(
+            contentPadding = contentPadding,
         ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxHeight(),
-                state = updatesListState,
-                contentPadding = contentPadding,
-            ) {
-                if (presenter.lastUpdated > 0L) {
-                    updatesLastUpdatedItem(presenter.lastUpdated)
-                }
-
-                updatesUiItems(
-                    uiModels = presenter.uiModels,
-                    selectionMode = presenter.selectionMode,
-                    onUpdateSelected = presenter::toggleSelection,
-                    onClickCover = onClickCover,
-                    onClickUpdate = {
-                        val intent = ReaderActivity.newIntent(context, it.update.mangaId, it.update.chapterId)
-                        context.startActivity(intent)
-                    },
-                    onDownloadChapter = presenter::downloadChapters,
-                    relativeTime = presenter.relativeTime,
-                    dateFormat = presenter.dateFormat,
-                )
+            if (presenter.lastUpdated > 0L) {
+                updatesLastUpdatedItem(presenter.lastUpdated)
             }
+
+            updatesUiItems(
+                uiModels = presenter.uiModels,
+                selectionMode = presenter.selectionMode,
+                onUpdateSelected = presenter::toggleSelection,
+                onClickCover = onClickCover,
+                onClickUpdate = {
+                    val intent = ReaderActivity.newIntent(context, it.update.mangaId, it.update.chapterId)
+                    context.startActivity(intent)
+                },
+                onDownloadChapter = presenter::downloadChapters,
+                relativeTime = presenter.relativeTime,
+                dateFormat = presenter.dateFormat,
+            )
         }
     }
 
@@ -255,24 +243,24 @@ private fun UpdatesBottomBar(
         modifier = Modifier.fillMaxWidth(),
         onBookmarkClicked = {
             onMultiBookmarkClicked.invoke(selected, true)
-        }.takeIf { selected.any { !it.update.bookmark } },
+        }.takeIf { selected.fastAny { !it.update.bookmark } },
         onRemoveBookmarkClicked = {
             onMultiBookmarkClicked.invoke(selected, false)
-        }.takeIf { selected.all { it.update.bookmark } },
+        }.takeIf { selected.fastAll { it.update.bookmark } },
         onMarkAsReadClicked = {
             onMultiMarkAsReadClicked(selected, true)
-        }.takeIf { selected.any { !it.update.read } },
+        }.takeIf { selected.fastAny { !it.update.read } },
         onMarkAsUnreadClicked = {
             onMultiMarkAsReadClicked(selected, false)
-        }.takeIf { selected.any { it.update.read } },
+        }.takeIf { selected.fastAny { it.update.read } },
         onDownloadClicked = {
             onDownloadChapter(selected, ChapterDownloadAction.START)
         }.takeIf {
-            selected.any { it.downloadStateProvider() != Download.State.DOWNLOADED }
+            selected.fastAny { it.downloadStateProvider() != Download.State.DOWNLOADED }
         },
         onDeleteClicked = {
             onMultiDeleteClicked(selected)
-        }.takeIf { selected.any { it.downloadStateProvider() == Download.State.DOWNLOADED } },
+        }.takeIf { selected.fastAny { it.downloadStateProvider() == Download.State.DOWNLOADED } },
     )
 }
 
