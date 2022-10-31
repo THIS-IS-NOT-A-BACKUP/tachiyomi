@@ -17,9 +17,9 @@ import eu.kanade.domain.base.BasePreferences
 import eu.kanade.domain.category.interactor.GetCategories
 import eu.kanade.domain.category.interactor.SetMangaCategories
 import eu.kanade.domain.category.model.Category
-import eu.kanade.domain.chapter.interactor.GetChapterByMangaId
 import eu.kanade.domain.chapter.interactor.SetReadStatus
 import eu.kanade.domain.chapter.model.toDbChapter
+import eu.kanade.domain.history.interactor.GetNextUnreadChapters
 import eu.kanade.domain.library.model.LibraryManga
 import eu.kanade.domain.library.model.LibrarySort
 import eu.kanade.domain.library.model.sort
@@ -78,7 +78,7 @@ class LibraryPresenter(
     private val getLibraryManga: GetLibraryManga = Injekt.get(),
     private val getTracksPerManga: GetTracksPerManga = Injekt.get(),
     private val getCategories: GetCategories = Injekt.get(),
-    private val getChapterByMangaId: GetChapterByMangaId = Injekt.get(),
+    private val getNextUnreadChapters: GetNextUnreadChapters = Injekt.get(),
     private val setReadStatus: SetReadStatus = Injekt.get(),
     private val updateManga: UpdateManga = Injekt.get(),
     private val setMangaCategories: SetMangaCategories = Injekt.get(),
@@ -402,18 +402,27 @@ class LibraryPresenter(
     }
 
     /**
-     * Queues all unread chapters from the given list of manga.
+     * Queues the amount specified of unread chapters from the list of mangas given.
      *
      * @param mangas the list of manga.
+     * @param amount the amount to queue or null to queue all
      */
-    fun downloadUnreadChapters(mangas: List<Manga>) {
+    fun downloadUnreadChapters(mangas: List<Manga>, amount: Int?) {
         presenterScope.launchNonCancellable {
             mangas.forEach { manga ->
-                val chapters = getChapterByMangaId.await(manga.id)
-                    .filter { !it.read }
-                    .map { it.toDbChapter() }
+                val chapters = getNextUnreadChapters.await(manga.id)
+                    .filterNot { chapter ->
+                        downloadManager.queue.any { chapter.id == it.chapter.id } ||
+                            downloadManager.isChapterDownloaded(
+                                chapter.name,
+                                chapter.scanlator,
+                                manga.title,
+                                manga.source,
+                            )
+                    }
+                    .let { if (amount != null) it.take(amount) else it }
 
-                downloadManager.downloadChapters(manga, chapters)
+                downloadManager.downloadChapters(manga, chapters.map { it.toDbChapter() })
             }
         }
     }
@@ -604,5 +613,6 @@ class LibraryPresenter(
     sealed class Dialog {
         data class ChangeCategory(val manga: List<Manga>, val initialSelection: List<CheckboxState<Category>>) : Dialog()
         data class DeleteManga(val manga: List<Manga>) : Dialog()
+        data class DownloadCustomAmount(val manga: List<Manga>, val max: Int) : Dialog()
     }
 }

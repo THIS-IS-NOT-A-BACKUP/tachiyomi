@@ -131,7 +131,7 @@ open class BrowseSourcePresenter(
                 .map {
                     it.map { sManga ->
                         withIOContext {
-                            networkToLocalManga.await(sManga.toDomainManga(), sourceId)
+                            networkToLocalManga.await(sManga.toDomainManga(sourceId))
                         }
                     }
                 }
@@ -154,7 +154,8 @@ open class BrowseSourcePresenter(
     }
 
     fun reset() {
-        state.filters = source!!.getFilterList()
+        val source = source ?: return
+        state.filters = source.getFilterList()
         if (currentFilter !is Filter.UserInput) return
         state.currentFilter = (currentFilter as Filter.UserInput).copy(filters = state.filters)
     }
