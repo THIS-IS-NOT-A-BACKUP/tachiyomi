@@ -505,6 +505,8 @@
     <string name="cache_deleted">Cache cleared. %1$d files have been deleted</string>
     <string name="cache_delete_error">Error occurred while clearing</string>
     <string name="pref_auto_clear_chapter_cache">Clear chapter cache on app close</string>
+    <string name="pref_invalidate_download_cache">Invalidate download cache</string>
+    <string name="pref_invalidate_download_cache_summary">Forces the app to reindex downloads</string>
     <string name="pref_clear_database">Clear database</string>
     <string name="pref_clear_database_summary">Delete history for entries that are not saved in your library</string>
     <string name="clear_database_source_item_count">%1$d non-library entries in database</string>
@@ -866,8 +868,7 @@
     <string name="download_notifier_unknown_error">Could not download chapter due to unexpected error</string>
     <string name="download_notifier_text_only_wifi">No Wi-Fi connection available</string>
     <string name="download_notifier_no_network">No network connection available</string>
-    <string name="download_notifier_download_paused">Download paused</string>
-    <string name="download_notifier_download_finish">Download completed</string>
+    <string name="download_notifier_download_paused">Downloads paused</string>
     <string name="download_notifier_split_page_not_found">Page %d not found while splitting</string>
     <string name="download_notifier_split_page_path_not_found">Couldn\'t find file path of page %d</string>
     <string name="download_notifier_split_failed">Couldn\'t split downloaded image</string>
