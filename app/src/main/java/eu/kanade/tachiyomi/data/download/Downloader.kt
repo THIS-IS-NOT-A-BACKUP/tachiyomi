@@ -6,9 +6,13 @@ import com.jakewharton.rxrelay.PublishRelay
 import eu.kanade.domain.chapter.model.Chapter
 import eu.kanade.domain.chapter.model.toDbChapter
 import eu.kanade.domain.download.service.DownloadPreferences
+import eu.kanade.domain.manga.model.COMIC_INFO_FILE
+import eu.kanade.domain.manga.model.ComicInfo
 import eu.kanade.domain.manga.model.Manga
+import eu.kanade.domain.manga.model.getComicInfo
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.cache.ChapterCache
+import eu.kanade.tachiyomi.data.database.models.toDomainChapter
 import eu.kanade.tachiyomi.data.download.model.Download
 import eu.kanade.tachiyomi.data.download.model.DownloadQueue
 import eu.kanade.tachiyomi.data.library.LibraryUpdateNotifier
@@ -29,6 +33,7 @@ import eu.kanade.tachiyomi.util.system.ImageUtil
 import eu.kanade.tachiyomi.util.system.logcat
 import kotlinx.coroutines.async
 import logcat.LogPriority
+import nl.adaptivity.xmlutil.serialization.XML
 import okhttp3.Response
 import rx.Observable
 import rx.android.schedulers.AndroidSchedulers
@@ -36,6 +41,7 @@ import rx.schedulers.Schedulers
 import rx.subscriptions.CompositeSubscription
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
+import uy.kohesive.injekt.injectLazy
 import java.io.BufferedOutputStream
 import java.io.File
 import java.util.zip.CRC32
@@ -64,6 +70,11 @@ class Downloader(
     private val chapterCache: ChapterCache = Injekt.get(),
     private val downloadPreferences: DownloadPreferences = Injekt.get(),
 ) {
+
+    /**
+     * xml format used for ComicInfo files
+     */
+    private val xml: XML by injectLazy()
 
     /**
      * Store for persisting downloads across restarts.
@@ -513,6 +524,14 @@ class Downloader(
         // Ensure that the chapter folder has all the images.
         val downloadedImages = tmpDir.listFiles().orEmpty().filterNot { it.name!!.endsWith(".tmp") || (it.name!!.contains("__") && !it.name!!.contains("__001.jpg")) }
 
+        val chapterUrl = download.source.getChapterUrl(download.chapter)
+        createComicInfoFile(
+            tmpDir,
+            download.manga,
+            download.chapter.toDomainChapter()!!,
+            chapterUrl,
+        )
+
         download.status = if (downloadedImages.size == download.pages!!.size) {
             // Only rename the directory if it's downloaded.
             if (downloadPreferences.saveChaptersAsCBZ().get()) {
@@ -562,6 +581,29 @@ class Downloader(
         }
         zip.renameTo("$dirname.cbz")
         tmpDir.delete()
+    }
+
+    /**
+     * Creates a ComicInfo.xml file inside the given directory.
+     *
+     * @param dir the directory in which the ComicInfo file will be generated.
+     * @param manga the manga.
+     * @param chapter the chapter.
+     * @param chapterUrl the resolved URL for the chapter.
+     */
+    private fun createComicInfoFile(
+        dir: UniFile,
+        manga: Manga,
+        chapter: Chapter,
+        chapterUrl: String,
+    ) {
+        val comicInfo = getComicInfo(manga, chapter, chapterUrl)
+        val comicInfoString = xml.encodeToString(ComicInfo.serializer(), comicInfo)
+        // Remove the old file
+        dir.findFile(COMIC_INFO_FILE)?.delete()
+        dir.createFile(COMIC_INFO_FILE).openOutputStream().use {
+            it.write(comicInfoString.toByteArray())
+        }
     }
 
     /**

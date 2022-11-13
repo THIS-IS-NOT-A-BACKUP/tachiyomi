@@ -62,6 +62,7 @@ import eu.kanade.presentation.components.LoadingScreen
 import eu.kanade.presentation.components.MangaCover
 import eu.kanade.presentation.components.ScrollbarLazyColumn
 import eu.kanade.presentation.util.plus
+import eu.kanade.presentation.util.runOnEnterKeyPressed
 import eu.kanade.presentation.util.secondaryItemAlpha
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
@@ -80,6 +81,10 @@ fun TrackServiceSearch(
 ) {
     val focusManager = LocalFocusManager.current
     val focusRequester = remember { FocusRequester() }
+    val dispatchQueryAndClearFocus: () -> Unit = {
+        onDispatchQuery()
+        focusManager.clearFocus()
+    }
 
     Scaffold(
         contentWindowInsets = WindowInsets(
@@ -106,12 +111,13 @@ fun TrackServiceSearch(
                             onValueChange = onQueryChange,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .focusRequester(focusRequester),
+                                .focusRequester(focusRequester)
+                                .runOnEnterKeyPressed(action = dispatchQueryAndClearFocus),
                             textStyle = MaterialTheme.typography.bodyLarge
                                 .copy(color = MaterialTheme.colorScheme.onSurface),
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                            keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus(); onDispatchQuery() }),
+                            keyboardActions = KeyboardActions(onSearch = { dispatchQueryAndClearFocus() }),
                             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                             decorationBox = {
                                 if (query.text.isEmpty()) {
@@ -159,7 +165,7 @@ fun TrackServiceSearch(
                         .fillMaxWidth(),
                     elevation = ButtonDefaults.elevatedButtonElevation(),
                 ) {
-                    Text(text = stringResource(id = R.string.action_track))
+                    Text(text = stringResource(R.string.action_track))
                 }
             }
         },
@@ -200,7 +206,7 @@ fun TrackServiceSearch(
                 EmptyScreen(
                     modifier = Modifier.padding(innerPadding),
                     message = queryResult.exceptionOrNull()?.message
-                        ?: stringResource(id = R.string.unknown_error),
+                        ?: stringResource(R.string.unknown_error),
                 )
             }
         }
@@ -258,19 +264,19 @@ private fun SearchResultItem(
                     )
                     if (type.isNotBlank()) {
                         SearchResultItemDetails(
-                            title = stringResource(id = R.string.track_type),
+                            title = stringResource(R.string.track_type),
                             text = type,
                         )
                     }
                     if (startDate.isNotBlank()) {
                         SearchResultItemDetails(
-                            title = stringResource(id = R.string.track_start_date),
+                            title = stringResource(R.string.track_start_date),
                             text = startDate,
                         )
                     }
                     if (status.isNotBlank()) {
                         SearchResultItemDetails(
-                            title = stringResource(id = R.string.track_status),
+                            title = stringResource(R.string.track_status),
                             text = status,
                         )
                     }

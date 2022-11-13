@@ -9,7 +9,7 @@
     <!-- Models -->
     <string name="name">Name</string>
     <string name="categories">Categories</string>
-    <string name="manga">Manga</string>
+    <string name="manga">Library entries</string>
     <string name="chapters">Chapters</string>
     <string name="track">Tracking</string>
     <string name="history">History</string>
@@ -447,11 +447,10 @@
     <string name="tracking_info">One-way sync to update the chapter progress in tracking services. Set up tracking for individual entries from their tracking button.</string>
     <string name="enhanced_services">Enhanced services</string>
     <string name="enhanced_tracking_info">Services that provide enhanced features for specific sources. Entries are automatically tracked when added to your library.</string>
+    <string name="enhanced_tracking_warning">This tracker is only compatible with the %1$s source.</string>
     <string name="action_track">Track</string>
 
       <!-- Browse section -->
-    <string name="pref_duplicate_pinned_sources">Show duplicated pinned sources</string>
-    <string name="pref_duplicate_pinned_sources_summary">Repeat pinned sources in their respective language groups</string>
     <string name="pref_enable_automatic_extension_updates">Check for extension updates</string>
     <string name="pref_search_pinned_sources_only">Only include pinned sources</string>
 
@@ -505,8 +504,7 @@
     <string name="cache_deleted">Cache cleared. %1$d files have been deleted</string>
     <string name="cache_delete_error">Error occurred while clearing</string>
     <string name="pref_auto_clear_chapter_cache">Clear chapter cache on app close</string>
-    <string name="pref_invalidate_download_cache">Invalidate download cache</string>
-    <string name="pref_invalidate_download_cache_summary">Forces the app to reindex downloads</string>
+    <string name="pref_invalidate_download_cache">Invalidate downloads index</string>
     <string name="pref_clear_database">Clear database</string>
     <string name="pref_clear_database_summary">Delete history for entries that are not saved in your library</string>
     <string name="clear_database_source_item_count">%1$d non-library entries in database</string>
@@ -673,10 +671,10 @@
     <string name="tracker_myanimelist" translatable="false">MyAnimeList</string>
     <string name="tracker_kitsu" translatable="false">Kitsu</string>
     <string name="tracker_komga" translatable="false">Komga</string>
-    <string name="tracker_komga_warning">This tracker is only compatible with the Komga source.</string>
     <string name="tracker_bangumi" translatable="false">Bangumi</string>
     <string name="tracker_shikimori" translatable="false">Shikimori</string>
     <string name="tracker_manga_updates" translatable="false">MangaUpdates</string>
+    <string name="tracker_kavita" translatable="false">Kavita</string>
     <string name="manga_tracking_tab">Tracking</string>
     <plurals name="num_trackers">
         <item quantity="one">%d tracker</item>
@@ -883,7 +881,7 @@
     <string name="channel_new_chapters">Chapter updates</string>
     <string name="channel_app_updates">App updates</string>
     <string name="channel_ext_updates">Extension updates</string>
-    <string name="channel_downloader_cache">Download cache</string>
+    <string name="channel_downloader_cache">Indexing</string>
     <string name="channel_crash_logs">Crash logs</string>
 
     <!-- S Pen actions -->
