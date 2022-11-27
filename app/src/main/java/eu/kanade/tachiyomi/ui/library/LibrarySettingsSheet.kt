@@ -32,7 +32,6 @@ class LibrarySettingsSheet(
     private val trackManager: TrackManager = Injekt.get(),
     private val setDisplayModeForCategory: SetDisplayModeForCategory = Injekt.get(),
     private val setSortModeForCategory: SetSortModeForCategory = Injekt.get(),
-    onGroupClickListener: (ExtendedNavigationView.Group) -> Unit,
 ) : TabbedBottomSheetDialog(router.activity!!) {
 
     val filters: Filter
@@ -43,13 +42,8 @@ class LibrarySettingsSheet(
 
     init {
         filters = Filter(router.activity!!)
-        filters.onGroupClicked = onGroupClickListener
-
         sort = Sort(router.activity!!)
-        sort.onGroupClicked = onGroupClickListener
-
         display = Display(router.activity!!)
-        display.onGroupClicked = onGroupClickListener
     }
 
     /**
@@ -97,9 +91,9 @@ class LibrarySettingsSheet(
 
         inner class FilterGroup : Group {
 
-            private val downloaded = Item.TriStateGroup(R.string.action_filter_downloaded, this)
+            private val downloaded = Item.TriStateGroup(R.string.label_downloaded, this)
             private val unread = Item.TriStateGroup(R.string.action_filter_unread, this)
-            private val started = Item.TriStateGroup(R.string.action_filter_started, this)
+            private val started = Item.TriStateGroup(R.string.label_started, this)
             private val bookmarked = Item.TriStateGroup(R.string.action_filter_bookmarked, this)
             private val completed = Item.TriStateGroup(R.string.completed, this)
             private val trackFilters: Map<Long, Item.TriStateGroup>
