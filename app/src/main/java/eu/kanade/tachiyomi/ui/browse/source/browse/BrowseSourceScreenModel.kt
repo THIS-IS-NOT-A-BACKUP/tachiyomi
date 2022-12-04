@@ -9,7 +9,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
-import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.map
 import cafe.adriel.voyager.core.model.StateScreenModel
@@ -31,7 +30,6 @@ import eu.kanade.domain.manga.interactor.GetManga
 import eu.kanade.domain.manga.interactor.NetworkToLocalManga
 import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.domain.manga.model.Manga
-import eu.kanade.domain.manga.model.toDbManga
 import eu.kanade.domain.manga.model.toDomainManga
 import eu.kanade.domain.manga.model.toMangaUpdate
 import eu.kanade.domain.source.interactor.GetRemoteManga
@@ -64,8 +62,9 @@ import eu.kanade.tachiyomi.util.lang.withIOContext
 import eu.kanade.tachiyomi.util.lang.withNonCancellableContext
 import eu.kanade.tachiyomi.util.removeCovers
 import eu.kanade.tachiyomi.util.system.logcat
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
@@ -114,6 +113,30 @@ class BrowseSourceScreenModel(
      */
     private var filterSheet: SourceFilterSheet? = null
 
+    /**
+     * Flow of Pager flow tied to [State.currentFilter]
+     */
+    val mangaPagerFlowFlow = state.map { it.currentFilter }
+        .distinctUntilChanged()
+        .map { currentFilter ->
+            Pager(
+                PagingConfig(pageSize = 25),
+            ) {
+                getRemoteManga.subscribe(sourceId, currentFilter.query ?: "", currentFilter.filters)
+            }.flow
+                .map { pagingData ->
+                    pagingData.map { sManga ->
+                        val dbManga = withIOContext { networkToLocalManga.await(sManga.toDomainManga(sourceId)) }
+                        getManga.subscribe(dbManga.url, dbManga.source)
+                            .filterNotNull()
+                            .onEach { initializeManga(it) }
+                            .stateIn(coroutineScope)
+                    }
+                }
+                .cachedIn(coroutineScope)
+        }
+        .stateIn(coroutineScope, SharingStarted.Lazily, emptyFlow())
+
     init {
         mutableState.update { it.copy(filters = source.getFilterList()) }
     }
@@ -126,24 +149,6 @@ class BrowseSourceScreenModel(
             libraryPreferences.portraitColumns()
         }.get()
         return if (columns == 0) GridCells.Adaptive(128.dp) else GridCells.Fixed(columns)
-    }
-
-    fun getMangaListFlow(currentFilter: Filter): Flow<PagingData<StateFlow<Manga>>> {
-        return Pager(
-            PagingConfig(pageSize = 25),
-        ) {
-            getRemoteManga.subscribe(sourceId, currentFilter.query ?: "", currentFilter.filters)
-        }.flow
-            .map { pagingData ->
-                pagingData.map { sManga ->
-                    val dbManga = withIOContext { networkToLocalManga.await(sManga.toDomainManga(sourceId)) }
-                    getManga.subscribe(dbManga.url, dbManga.source)
-                        .filterNotNull()
-                        .onEach { initializeManga(it) }
-                        .stateIn(coroutineScope)
-                }
-            }
-            .cachedIn(coroutineScope)
     }
 
     fun reset() {
@@ -303,7 +308,7 @@ class BrowseSourceScreenModel(
             .filter { it.accept(source) }
             .forEach { service ->
                 try {
-                    service.match(manga.toDbManga())?.let { track ->
+                    service.match(manga)?.let { track ->
                         track.manga_id = manga.id
                         (service as TrackService).bind(track)
                         insertTrack.await(track.toDomainTrack()!!)

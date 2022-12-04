@@ -4,8 +4,10 @@ import android.app.Application
 import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ButtonDefaults
@@ -38,7 +40,6 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import eu.kanade.domain.chapter.interactor.SyncChaptersWithTrackServiceTwoWay
 import eu.kanade.domain.manga.interactor.GetManga
 import eu.kanade.domain.manga.interactor.GetMangaWithChapters
-import eu.kanade.domain.manga.model.toDbManga
 import eu.kanade.domain.track.interactor.DeleteTrack
 import eu.kanade.domain.track.interactor.GetTracks
 import eu.kanade.domain.track.interactor.InsertTrack
@@ -52,7 +53,6 @@ import eu.kanade.presentation.manga.TrackInfoDialogHome
 import eu.kanade.presentation.manga.TrackScoreSelector
 import eu.kanade.presentation.manga.TrackServiceSearch
 import eu.kanade.presentation.manga.TrackStatusSelector
-import eu.kanade.presentation.util.LocalNavigatorContentPadding
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.database.models.Track
 import eu.kanade.tachiyomi.data.track.EnhancedTrackService
@@ -96,7 +96,6 @@ data class TrackInfoDialogHomeScreen(
         TrackInfoDialogHome(
             trackItems = state.trackItems,
             dateFormat = dateFormat,
-            contentPadding = LocalNavigatorContentPadding.current,
             onStatusClick = {
                 navigator.push(
                     TrackStatusSelectorScreen(
@@ -154,8 +153,7 @@ data class TrackInfoDialogHomeScreen(
                 }
             },
             onOpenInBrowser = { openTrackerInBrowser(context, it) },
-            onRemoved = { sm.unregisterTracking(it.service.id) },
-        )
+        ) { sm.unregisterTracking(it.service.id) }
     }
 
     /**
@@ -211,7 +209,7 @@ data class TrackInfoDialogHomeScreen(
         fun registerEnhancedTracking(item: TrackItem) {
             item.service as EnhancedTrackService
             coroutineScope.launchNonCancellable {
-                val manga = Injekt.get<GetManga>().await(mangaId)?.toDbManga() ?: return@launchNonCancellable
+                val manga = Injekt.get<GetManga>().await(mangaId) ?: return@launchNonCancellable
                 try {
                     val matchResult = item.service.match(manga) ?: throw Exception()
                     item.service.registerTracking(matchResult, mangaId)
@@ -258,7 +256,6 @@ private data class TrackStatusSelectorScreen(
         }
         val state by sm.state.collectAsState()
         TrackStatusSelector(
-            contentPadding = LocalNavigatorContentPadding.current,
             selection = state.selection,
             onSelectionChange = sm::setSelection,
             selections = remember { sm.getSelections() },
@@ -309,7 +306,6 @@ private data class TrackChapterSelectorScreen(
         val state by sm.state.collectAsState()
 
         TrackChapterSelector(
-            contentPadding = LocalNavigatorContentPadding.current,
             selection = state.selection,
             onSelectionChange = sm::setSelection,
             range = remember { sm.getRange() },
@@ -365,7 +361,6 @@ private data class TrackScoreSelectorScreen(
         val state by sm.state.collectAsState()
 
         TrackScoreSelector(
-            contentPadding = LocalNavigatorContentPadding.current,
             selection = state.selection,
             onSelectionChange = sm::setSelection,
             selections = remember { sm.getSelections() },
@@ -423,7 +418,6 @@ private data class TrackDateSelectorScreen(
             track.finished_reading_date > 0
         }
         TrackDateSelector(
-            contentPadding = LocalNavigatorContentPadding.current,
             title = if (start) {
                 stringResource(R.string.track_started_reading_date)
             } else {
@@ -498,7 +492,7 @@ private data class TrackDateRemoverScreen(
             )
         }
         AlertDialogContent(
-            modifier = Modifier.padding(LocalNavigatorContentPadding.current),
+            modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
             icon = {
                 Icon(
                     imageVector = Icons.Default.Delete,
@@ -586,7 +580,6 @@ data class TrackServiceSearchScreen(
 
         var textFieldValue by remember { mutableStateOf(TextFieldValue(initialQuery)) }
         TrackServiceSearch(
-            contentPadding = LocalNavigatorContentPadding.current,
             query = textFieldValue,
             onQueryChange = { textFieldValue = it },
             onDispatchQuery = { sm.trackingSearch(textFieldValue.text) },
