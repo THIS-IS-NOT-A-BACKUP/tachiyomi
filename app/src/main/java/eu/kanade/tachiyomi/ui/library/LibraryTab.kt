@@ -149,7 +149,7 @@ object LibraryTab : Tab {
         ) { contentPadding ->
             when {
                 state.isLoading -> LoadingScreen(modifier = Modifier.padding(contentPadding))
-                state.searchQuery.isNullOrEmpty() && state.libraryCount == 0 -> {
+                state.searchQuery.isNullOrEmpty() && !state.hasActiveFilters && state.libraryCount == 0 -> {
                     val handler = LocalUriHandler.current
                     EmptyScreen(
                         textResource = R.string.information_empty_library,
@@ -170,8 +170,7 @@ object LibraryTab : Tab {
                         selection = state.selection,
                         contentPadding = contentPadding,
                         currentPage = { screenModel.activeCategory },
-                        isLibraryEmpty = state.libraryCount == 0,
-                        showPageTabs = state.showCategoryTabs,
+                        showPageTabs = state.showCategoryTabs || !state.searchQuery.isNullOrEmpty(),
                         onChangeCurrentPage = { screenModel.activeCategory = it },
                         onMangaClicked = { navigator.push(MangaScreen(it)) },
                         onContinueReadingClicked = { it: LibraryManga ->
