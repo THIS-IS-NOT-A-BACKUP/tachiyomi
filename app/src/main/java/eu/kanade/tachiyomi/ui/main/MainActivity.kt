@@ -86,8 +86,6 @@ class MainActivity : BaseActivity() {
     private val uiPreferences: UiPreferences by injectLazy()
     private val preferences: BasePreferences by injectLazy()
 
-    private var isHandlingShortcut: Boolean = false
-
     private val chapterCache: ChapterCache by injectLazy()
 
     // To be checked by splash screen. If true then splash screen will be removed.
@@ -98,9 +96,16 @@ class MainActivity : BaseActivity() {
      */
     private var settingsSheet: LibrarySettingsSheet? = null
 
+    private var isHandlingShortcut: Boolean = false
     private lateinit var navigator: Navigator
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Do not let the launcher create a new activity http://stackoverflow.com/questions/16283079
+        if (!isTaskRoot) {
+            finish()
+            return
+        }
+
         // Prevent splash screen showing up on configuration changes
         val splashScreen = if (savedInstanceState == null) installSplashScreen() else null
 
@@ -128,12 +133,6 @@ class MainActivity : BaseActivity() {
             false
         }
 
-        // Do not let the launcher create a new activity http://stackoverflow.com/questions/16283079
-        if (!isTaskRoot) {
-            finish()
-            return
-        }
-
         // Draw edge-to-edge
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
@@ -149,6 +148,18 @@ class MainActivity : BaseActivity() {
             ) { navigator ->
                 if (navigator.size == 1) {
                     ConfirmExit()
+                }
+
+                LaunchedEffect(navigator) {
+                    this@MainActivity.navigator = navigator
+
+                    if (savedInstanceState == null) {
+                        // Set start screen
+                        handleIntentAction(intent)
+
+                        // Reset Incognito Mode on relaunch
+                        preferences.incognitoMode().set(false)
+                    }
                 }
 
                 // Shows current screen
@@ -169,10 +180,6 @@ class MainActivity : BaseActivity() {
                             }
                         }
                         .launchIn(this)
-                }
-
-                LaunchedEffect(navigator) {
-                    this@MainActivity.navigator = navigator
                 }
 
                 CheckForUpdate()
@@ -203,14 +210,6 @@ class MainActivity : BaseActivity() {
             elapsed <= SPLASH_MIN_DURATION || (!ready && elapsed <= SPLASH_MAX_DURATION)
         }
         setSplashScreenExitAnimation(splashScreen)
-
-        if (savedInstanceState == null) {
-            // Set start screen
-            lifecycleScope.launch { handleIntentAction(intent) }
-
-            // Reset Incognito Mode on relaunch
-            preferences.incognitoMode().set(false)
-        }
     }
 
     private fun showSettingsSheet(category: Category? = null) {
@@ -342,15 +341,15 @@ class MainActivity : BaseActivity() {
 
         when (intent.action) {
             SHORTCUT_LIBRARY -> HomeScreen.openTab(HomeScreen.Tab.Library())
-            SHORTCUT_RECENTLY_UPDATED -> HomeScreen.openTab(HomeScreen.Tab.Updates)
-            SHORTCUT_RECENTLY_READ -> HomeScreen.openTab(HomeScreen.Tab.History)
-            SHORTCUT_CATALOGUES -> HomeScreen.openTab(HomeScreen.Tab.Browse(false))
-            SHORTCUT_EXTENSIONS -> HomeScreen.openTab(HomeScreen.Tab.Browse(true))
             SHORTCUT_MANGA -> {
                 val idToOpen = intent.extras?.getLong(Constants.MANGA_EXTRA) ?: return false
                 navigator.popUntilRoot()
                 HomeScreen.openTab(HomeScreen.Tab.Library(idToOpen))
             }
+            SHORTCUT_UPDATES -> HomeScreen.openTab(HomeScreen.Tab.Updates)
+            SHORTCUT_HISTORY -> HomeScreen.openTab(HomeScreen.Tab.History)
+            SHORTCUT_SOURCES -> HomeScreen.openTab(HomeScreen.Tab.Browse(false))
+            SHORTCUT_EXTENSIONS -> HomeScreen.openTab(HomeScreen.Tab.Browse(true))
             SHORTCUT_DOWNLOADS -> {
                 navigator.popUntilRoot()
                 HomeScreen.openTab(HomeScreen.Tab.More(toDownloads = true))
@@ -413,12 +412,12 @@ class MainActivity : BaseActivity() {
 
         // Shortcut actions
         const val SHORTCUT_LIBRARY = "eu.kanade.tachiyomi.SHOW_LIBRARY"
-        const val SHORTCUT_RECENTLY_UPDATED = "eu.kanade.tachiyomi.SHOW_RECENTLY_UPDATED"
-        const val SHORTCUT_RECENTLY_READ = "eu.kanade.tachiyomi.SHOW_RECENTLY_READ"
-        const val SHORTCUT_CATALOGUES = "eu.kanade.tachiyomi.SHOW_CATALOGUES"
-        const val SHORTCUT_DOWNLOADS = "eu.kanade.tachiyomi.SHOW_DOWNLOADS"
         const val SHORTCUT_MANGA = "eu.kanade.tachiyomi.SHOW_MANGA"
+        const val SHORTCUT_UPDATES = "eu.kanade.tachiyomi.SHOW_RECENTLY_UPDATED"
+        const val SHORTCUT_HISTORY = "eu.kanade.tachiyomi.SHOW_RECENTLY_READ"
+        const val SHORTCUT_SOURCES = "eu.kanade.tachiyomi.SHOW_CATALOGUES"
         const val SHORTCUT_EXTENSIONS = "eu.kanade.tachiyomi.EXTENSIONS"
+        const val SHORTCUT_DOWNLOADS = "eu.kanade.tachiyomi.SHOW_DOWNLOADS"
 
         const val INTENT_SEARCH = "eu.kanade.tachiyomi.SEARCH"
         const val INTENT_SEARCH_QUERY = "query"
