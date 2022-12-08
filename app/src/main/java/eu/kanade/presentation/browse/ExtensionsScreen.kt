@@ -40,7 +40,7 @@ import eu.kanade.presentation.browse.components.ExtensionIcon
 import eu.kanade.presentation.components.EmptyScreen
 import eu.kanade.presentation.components.FastScrollLazyColumn
 import eu.kanade.presentation.components.LoadingScreen
-import eu.kanade.presentation.components.SwipeRefresh
+import eu.kanade.presentation.components.PullRefresh
 import eu.kanade.presentation.manga.components.DotSeparatorNoSpaceText
 import eu.kanade.presentation.theme.header
 import eu.kanade.presentation.util.padding
@@ -58,6 +58,7 @@ import eu.kanade.tachiyomi.util.system.LocaleHelper
 fun ExtensionScreen(
     state: ExtensionsState,
     contentPadding: PaddingValues,
+    searchQuery: String? = null,
     onLongClickItem: (Extension) -> Unit,
     onClickItemCancel: (Extension) -> Unit,
     onInstallExtension: (Extension.Available) -> Unit,
@@ -68,17 +69,24 @@ fun ExtensionScreen(
     onClickUpdateAll: () -> Unit,
     onRefresh: () -> Unit,
 ) {
-    SwipeRefresh(
+    PullRefresh(
         refreshing = state.isRefreshing,
         onRefresh = onRefresh,
         enabled = !state.isLoading,
     ) {
         when {
             state.isLoading -> LoadingScreen(modifier = Modifier.padding(contentPadding))
-            state.isEmpty -> EmptyScreen(
-                textResource = R.string.empty_screen,
-                modifier = Modifier.padding(contentPadding),
-            )
+            state.isEmpty -> {
+                val msg = if (!searchQuery.isNullOrEmpty()) {
+                    R.string.no_results_found
+                } else {
+                    R.string.empty_screen
+                }
+                EmptyScreen(
+                    textResource = msg,
+                    modifier = Modifier.padding(contentPadding),
+                )
+            }
             else -> {
                 ExtensionContent(
                     state = state,

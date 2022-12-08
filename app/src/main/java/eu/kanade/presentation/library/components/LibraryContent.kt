@@ -18,7 +18,7 @@ import eu.kanade.core.prefs.PreferenceMutableState
 import eu.kanade.domain.category.model.Category
 import eu.kanade.domain.library.model.LibraryDisplayMode
 import eu.kanade.domain.library.model.LibraryManga
-import eu.kanade.presentation.components.SwipeRefresh
+import eu.kanade.presentation.components.PullRefresh
 import eu.kanade.presentation.components.rememberPagerState
 import eu.kanade.tachiyomi.ui.library.LibraryItem
 import kotlinx.coroutines.delay
@@ -32,6 +32,7 @@ fun LibraryContent(
     selection: List<LibraryManga>,
     contentPadding: PaddingValues,
     currentPage: () -> Int,
+    hasActiveFilters: Boolean,
     showPageTabs: Boolean,
     onChangeCurrentPage: (Int) -> Unit,
     onMangaClicked: (Long) -> Unit,
@@ -79,11 +80,11 @@ fun LibraryContent(
             }
         }
 
-        SwipeRefresh(
+        PullRefresh(
             refreshing = isRefreshing,
             onRefresh = {
                 val started = onRefresh(categories[currentPage()])
-                if (!started) return@SwipeRefresh
+                if (!started) return@PullRefresh
                 scope.launch {
                     // Fake refresh status but hide it after a second as it's a long running task
                     isRefreshing = true
@@ -97,6 +98,7 @@ fun LibraryContent(
                 state = pagerState,
                 contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding()),
                 pageCount = categories.size,
+                hasActiveFilters = hasActiveFilters,
                 selectedManga = selection,
                 searchQuery = searchQuery,
                 onGlobalSearchClicked = onGlobalSearchClicked,
