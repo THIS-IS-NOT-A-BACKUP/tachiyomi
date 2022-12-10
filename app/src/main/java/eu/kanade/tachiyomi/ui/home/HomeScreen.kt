@@ -5,11 +5,11 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.with
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.consumedWindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -24,7 +24,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -41,7 +40,6 @@ import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.presentation.components.NavigationBar
 import eu.kanade.presentation.components.NavigationRail
 import eu.kanade.presentation.components.Scaffold
-import eu.kanade.presentation.util.Transition
 import eu.kanade.presentation.util.isTabletUi
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.ui.browse.BrowseTab
@@ -53,8 +51,11 @@ import eu.kanade.tachiyomi.ui.more.MoreTab
 import eu.kanade.tachiyomi.ui.updates.UpdatesTab
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import soup.compose.material.motion.animation.materialFadeThroughIn
+import soup.compose.material.motion.animation.materialFadeThroughOut
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -63,6 +64,8 @@ object HomeScreen : Screen {
     private val librarySearchEvent = Channel<String>()
     private val openTabEvent = Channel<Tab>()
     private val showBottomNavEvent = Channel<Boolean>()
+
+    private const val TabFadeDuration = 200
 
     private val tabs = listOf(
         LibraryTab,
@@ -80,50 +83,53 @@ object HomeScreen : Screen {
         ) { tabNavigator ->
             // Provide usable navigator to content screen
             CompositionLocalProvider(LocalNavigator provides navigator) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (isTabletUi()) {
-                        NavigationRail {
-                            tabs.fastForEach {
-                                NavigationRailItem(it)
+                Scaffold(
+                    startBar = {
+                        if (isTabletUi()) {
+                            NavigationRail {
+                                tabs.fastForEach {
+                                    NavigationRailItem(it)
+                                }
                             }
                         }
-                    }
-                    Scaffold(
-                        bottomBar = {
-                            if (!isTabletUi()) {
-                                val bottomNavVisible by produceState(initialValue = true) {
-                                    showBottomNavEvent.receiveAsFlow().collectLatest { value = it }
-                                }
-                                AnimatedVisibility(
-                                    visible = bottomNavVisible,
-                                    enter = expandVertically(),
-                                    exit = shrinkVertically(),
-                                ) {
-                                    NavigationBar {
-                                        tabs.fastForEach {
-                                            NavigationBarItem(it)
-                                        }
+                    },
+                    bottomBar = {
+                        if (!isTabletUi()) {
+                            val bottomNavVisible by produceState(initialValue = true) {
+                                showBottomNavEvent.receiveAsFlow().collectLatest { value = it }
+                            }
+                            AnimatedVisibility(
+                                visible = bottomNavVisible,
+                                enter = expandVertically(),
+                                exit = shrinkVertically(),
+                            ) {
+                                NavigationBar {
+                                    tabs.fastForEach {
+                                        NavigationBarItem(it)
                                     }
                                 }
                             }
-                        },
-                        contentWindowInsets = WindowInsets(0),
-                    ) { contentPadding ->
-                        Box(
-                            modifier = Modifier
-                                .padding(contentPadding)
-                                .consumedWindowInsets(contentPadding),
-                        ) {
-                            AnimatedContent(
-                                targetState = tabNavigator.current,
-                                transitionSpec = { Transition.OneWayFade },
-                                content = {
-                                    tabNavigator.saveableState(key = "currentTab", it) {
-                                        it.Content()
-                                    }
-                                },
-                            )
                         }
+                    },
+                    contentWindowInsets = WindowInsets(0),
+                ) { contentPadding ->
+                    Box(
+                        modifier = Modifier
+                            .padding(contentPadding)
+                            .consumeWindowInsets(contentPadding),
+                    ) {
+                        AnimatedContent(
+                            targetState = tabNavigator.current,
+                            transitionSpec = {
+                                materialFadeThroughIn(initialScale = 1f, durationMillis = TabFadeDuration) with
+                                    materialFadeThroughOut(durationMillis = TabFadeDuration)
+                            },
+                            content = {
+                                tabNavigator.saveableState(key = "currentTab", it) {
+                                    it.Content()
+                                }
+                            },
+                        )
                     }
                 }
             }
@@ -226,8 +232,11 @@ object HomeScreen : Screen {
                 when {
                     tab is UpdatesTab -> {
                         val count by produceState(initialValue = 0) {
-                            Injekt.get<LibraryPreferences>()
-                                .newUpdatesCount().changes()
+                            val pref = Injekt.get<LibraryPreferences>()
+                            combine(
+                                pref.newShowUpdatesCount().changes(),
+                                pref.newUpdatesCount().changes(),
+                            ) { show, count -> if (show) count else 0 }
                                 .collectLatest { value = it }
                         }
                         if (count > 0) {

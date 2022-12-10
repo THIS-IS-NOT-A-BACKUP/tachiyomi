@@ -2,12 +2,12 @@ package eu.kanade.tachiyomi.ui.main
 
 import android.animation.ValueAnimator
 import android.app.SearchManager
+import android.app.assist.AssistContent
 import android.content.Intent
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.view.View
-import android.view.Window
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -17,8 +17,10 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,12 +31,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.core.animation.doOnEnd
+import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator
 import androidx.lifecycle.lifecycleScope
@@ -42,16 +44,15 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.NavigatorDisposeBehavior
 import cafe.adriel.voyager.navigator.currentOrThrow
-import cafe.adriel.voyager.transitions.ScreenTransition
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import com.google.android.material.transition.platform.MaterialContainerTransformSharedElementCallback
 import eu.kanade.domain.base.BasePreferences
 import eu.kanade.domain.category.model.Category
 import eu.kanade.domain.library.service.LibraryPreferences
 import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.presentation.components.AppStateBanners
-import eu.kanade.presentation.util.Transition
+import eu.kanade.presentation.util.AssistContentScreen
+import eu.kanade.presentation.util.DefaultNavigatorScreenTransition
 import eu.kanade.presentation.util.collectAsState
 import eu.kanade.tachiyomi.BuildConfig
 import eu.kanade.tachiyomi.Migrations
@@ -71,11 +72,11 @@ import eu.kanade.tachiyomi.ui.manga.MangaScreen
 import eu.kanade.tachiyomi.ui.more.NewUpdateScreen
 import eu.kanade.tachiyomi.util.Constants
 import eu.kanade.tachiyomi.util.system.dpToPx
+import eu.kanade.tachiyomi.util.system.isNavigationBarNeedsScrim
 import eu.kanade.tachiyomi.util.system.logcat
 import eu.kanade.tachiyomi.util.system.openInBrowser
 import eu.kanade.tachiyomi.util.system.toast
 import eu.kanade.tachiyomi.util.view.setComposeContent
-import eu.kanade.tachiyomi.util.view.setNavigationBarTransparentCompat
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.drop
@@ -87,6 +88,7 @@ import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import uy.kohesive.injekt.injectLazy
 import kotlin.time.Duration.Companion.seconds
+import androidx.compose.ui.graphics.Color.Companion as ComposeColor
 
 class MainActivity : BaseActivity() {
 
@@ -117,11 +119,6 @@ class MainActivity : BaseActivity() {
 
         // Prevent splash screen showing up on configuration changes
         val splashScreen = if (savedInstanceState == null) installSplashScreen() else null
-
-        // Set up shared element transition and disable overlay so views don't show above system bars
-        window.requestFeature(Window.FEATURE_ACTIVITY_TRANSITIONS)
-        setExitSharedElementCallback(MaterialContainerTransformSharedElementCallback())
-        window.sharedElementsUseOverlay = false
 
         super.onCreate(savedInstanceState)
 
@@ -158,13 +155,33 @@ class MainActivity : BaseActivity() {
                     downloadedOnlyMode = download,
                     incognitoMode = incognito,
                 )
+
+                // Set statusbar color
                 val systemUiController = rememberSystemUiController()
+                val isSystemInDarkTheme = isSystemInDarkTheme()
                 val active = incognito || download
-                val useDarkIcons = if (isSystemInDarkTheme()) active else !active
-                LaunchedEffect(systemUiController, useDarkIcons) {
+                val useDarkStatusBarIcons = if (isSystemInDarkTheme) active else !active
+                LaunchedEffect(systemUiController, useDarkStatusBarIcons) {
                     systemUiController.setStatusBarColor(
-                        color = androidx.compose.ui.graphics.Color.Transparent,
-                        darkIcons = useDarkIcons,
+                        color = ComposeColor.Transparent,
+                        darkIcons = useDarkStatusBarIcons,
+                        transformColorForLightContent = { ComposeColor.Black },
+                    )
+                }
+
+                // Set navigation bar color
+                val context = LocalContext.current
+                val navbarScrimColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                LaunchedEffect(systemUiController, isSystemInDarkTheme, navbarScrimColor) {
+                    systemUiController.setNavigationBarColor(
+                        color = if (context.isNavigationBarNeedsScrim()) {
+                            navbarScrimColor.copy(alpha = 0.7f)
+                        } else {
+                            ComposeColor.Transparent
+                        },
+                        darkIcons = !isSystemInDarkTheme,
+                        navigationBarContrastEnforced = false,
+                        transformColorForLightContent = { ComposeColor.Black },
                     )
                 }
 
@@ -196,7 +213,7 @@ class MainActivity : BaseActivity() {
                     }
                     Box(modifier = boxModifier) {
                         // Shows current screen
-                        ScreenTransition(navigator = navigator, transition = { Transition.OneWayFade })
+                        DefaultNavigatorScreenTransition(navigator = navigator)
                     }
 
                     // Pop source-related screens when incognito mode is turned off
@@ -245,6 +262,15 @@ class MainActivity : BaseActivity() {
             elapsed <= SPLASH_MIN_DURATION || (!ready && elapsed <= SPLASH_MAX_DURATION)
         }
         setSplashScreenExitAnimation(splashScreen)
+    }
+
+    override fun onProvideAssistContent(outContent: AssistContent) {
+        super.onProvideAssistContent(outContent)
+        when (val screen = navigator.lastItem) {
+            is AssistContentScreen -> {
+                screen.onProvideAssistUrl()?.let { outContent.webUri = it.toUri() }
+            }
+        }
     }
 
     private fun showSettingsSheet(category: Category? = null) {
@@ -304,20 +330,7 @@ class MainActivity : BaseActivity() {
      */
     private fun setSplashScreenExitAnimation(splashScreen: SplashScreen?) {
         val root = findViewById<View>(android.R.id.content)
-        val setNavbarScrim = {
-            // Make sure navigation bar is on bottom before we modify it
-            ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
-                if (insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom > 0) {
-                    window.setNavigationBarTransparentCompat(this@MainActivity, 3.dpToPx.toFloat())
-                }
-                insets
-            }
-            ViewCompat.requestApplyInsets(root)
-        }
-
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S && splashScreen != null) {
-            val oldStatusColor = window.statusBarColor
-            val oldNavigationColor = window.navigationBarColor
             window.statusBarColor = Color.TRANSPARENT
             window.navigationBarColor = Color.TRANSPARENT
 
@@ -343,17 +356,12 @@ class MainActivity : BaseActivity() {
                     }
                     doOnEnd {
                         splashProvider.remove()
-                        window.statusBarColor = oldStatusColor
-                        window.navigationBarColor = oldNavigationColor
-                        setNavbarScrim()
                     }
                 }
 
                 activityAnim.start()
                 splashAnim.start()
             }
-        } else {
-            setNavbarScrim()
         }
     }
 

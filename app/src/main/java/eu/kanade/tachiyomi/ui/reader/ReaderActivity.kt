@@ -3,6 +3,7 @@ package eu.kanade.tachiyomi.ui.reader
 import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.app.ProgressDialog
+import android.app.assist.AssistContent
 import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
@@ -21,9 +22,7 @@ import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
-import android.view.View
 import android.view.View.LAYER_TYPE_HARDWARE
-import android.view.Window
 import android.view.WindowManager
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
@@ -31,6 +30,7 @@ import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.core.graphics.ColorUtils
+import androidx.core.net.toUri
 import androidx.core.transition.doOnEnd
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -43,11 +43,9 @@ import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.android.material.slider.Slider
 import com.google.android.material.transition.platform.MaterialContainerTransform
-import com.google.android.material.transition.platform.MaterialContainerTransformSharedElementCallback
 import dev.chrisbanes.insetter.applyInsetter
 import eu.kanade.domain.base.BasePreferences
 import eu.kanade.domain.manga.model.Manga
-import eu.kanade.tachiyomi.BuildConfig
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.notification.NotificationReceiver
 import eu.kanade.tachiyomi.data.notification.Notifications
@@ -115,9 +113,6 @@ class ReaderActivity : BaseActivity() {
 
         private const val ENABLED_BUTTON_IMAGE_ALPHA = 255
         private const val DISABLED_BUTTON_IMAGE_ALPHA = 64
-
-        const val EXTRA_IS_TRANSITION = "${BuildConfig.APPLICATION_ID}.READER_IS_TRANSITION"
-        const val SHARED_ELEMENT_NAME = "reader_shared_element_root"
     }
 
     private val readerPreferences: ReaderPreferences by injectLazy()
@@ -168,20 +163,7 @@ class ReaderActivity : BaseActivity() {
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         registerSecureActivity(this)
-
-        // Setup shared element transitions
-        if (intent.extras?.getBoolean(EXTRA_IS_TRANSITION) == true) {
-            window.requestFeature(Window.FEATURE_ACTIVITY_TRANSITIONS)
-            findViewById<View>(android.R.id.content)?.let { contentView ->
-                contentView.transitionName = SHARED_ELEMENT_NAME
-                setEnterSharedElementCallback(MaterialContainerTransformSharedElementCallback())
-                window.sharedElementEnterTransition = buildContainerTransform(true)
-                window.sharedElementReturnTransition = buildContainerTransform(false)
-
-                // Postpone custom transition until manga ready
-                postponeEnterTransition()
-            }
-        }
+        overridePendingTransition(R.anim.shared_axis_x_push_enter, R.anim.shared_axis_x_push_exit)
 
         super.onCreate(savedInstanceState)
 
@@ -316,6 +298,13 @@ class ReaderActivity : BaseActivity() {
         }
     }
 
+    override fun onProvideAssistContent(outContent: AssistContent) {
+        super.onProvideAssistContent(outContent)
+        viewModel.getChapterUrl()?.let { url ->
+            outContent.webUri = url.toUri()
+        }
+    }
+
     /**
      * Called when the options menu of the toolbar is being created. It adds our custom menu.
      */
@@ -357,6 +346,7 @@ class ReaderActivity : BaseActivity() {
     override fun finish() {
         viewModel.onActivityFinish()
         super.finish()
+        overridePendingTransition(R.anim.shared_axis_x_pop_enter, R.anim.shared_axis_x_pop_exit)
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {

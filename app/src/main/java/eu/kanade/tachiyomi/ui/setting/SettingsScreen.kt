@@ -1,19 +1,25 @@
 package eu.kanade.tachiyomi.ui.setting
 
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import cafe.adriel.voyager.transitions.ScreenTransition
 import eu.kanade.presentation.components.TwoPanelBox
 import eu.kanade.presentation.more.settings.screen.AboutScreen
 import eu.kanade.presentation.more.settings.screen.SettingsBackupScreen
 import eu.kanade.presentation.more.settings.screen.SettingsGeneralScreen
 import eu.kanade.presentation.more.settings.screen.SettingsMainScreen
+import eu.kanade.presentation.util.DefaultNavigatorScreenTransition
 import eu.kanade.presentation.util.LocalBackPress
-import eu.kanade.presentation.util.Transition
 import eu.kanade.presentation.util.isTabletUi
 
 class SettingsScreen private constructor(
@@ -42,10 +48,7 @@ class SettingsScreen private constructor(
                         }
                     }
                     CompositionLocalProvider(LocalBackPress provides pop) {
-                        ScreenTransition(
-                            navigator = it,
-                            transition = { Transition.OneWayFade },
-                        )
+                        DefaultNavigatorScreenTransition(navigator = it)
                     }
                 },
             )
@@ -59,18 +62,17 @@ class SettingsScreen private constructor(
                     SettingsGeneralScreen
                 },
             ) {
+                val insets = WindowInsets.systemBars.only(WindowInsetsSides.Horizontal)
                 TwoPanelBox(
+                    modifier = Modifier
+                        .windowInsetsPadding(insets)
+                        .consumeWindowInsets(insets),
                     startContent = {
                         CompositionLocalProvider(LocalBackPress provides parentNavigator::pop) {
                             SettingsMainScreen.Content(twoPane = true)
                         }
                     },
-                    endContent = {
-                        ScreenTransition(
-                            navigator = it,
-                            transition = { Transition.OneWayFade },
-                        )
-                    },
+                    endContent = { DefaultNavigatorScreenTransition(navigator = it) },
                 )
             }
         }
