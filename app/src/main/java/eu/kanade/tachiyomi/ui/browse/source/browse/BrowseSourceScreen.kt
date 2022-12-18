@@ -39,7 +39,6 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.uniqueScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import eu.kanade.domain.source.interactor.GetRemoteManga
 import eu.kanade.presentation.browse.BrowseSourceContent
 import eu.kanade.presentation.browse.components.BrowseSourceToolbar
 import eu.kanade.presentation.browse.components.RemoveMangaDialog
@@ -51,6 +50,7 @@ import eu.kanade.presentation.util.AssistContentScreen
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.source.LocalSource
 import eu.kanade.tachiyomi.source.online.HttpSource
+import eu.kanade.tachiyomi.ui.browse.source.browse.BrowseSourceScreenModel.Listing
 import eu.kanade.tachiyomi.ui.category.CategoryScreen
 import eu.kanade.tachiyomi.ui.manga.MangaScreen
 import eu.kanade.tachiyomi.ui.webview.WebViewActivity
@@ -62,7 +62,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 
 data class BrowseSourceScreen(
     private val sourceId: Long,
-    private val query: String? = null,
+    private val listingQuery: String?,
 ) : Screen, AssistContentScreen {
 
     private var assistUrl: String? = null
@@ -79,10 +79,17 @@ data class BrowseSourceScreen(
         val haptic = LocalHapticFeedback.current
         val uriHandler = LocalUriHandler.current
 
-        val screenModel = rememberScreenModel { BrowseSourceScreenModel(sourceId, query) }
+        val screenModel = rememberScreenModel { BrowseSourceScreenModel(sourceId, listingQuery) }
         val state by screenModel.state.collectAsState()
 
         val snackbarHostState = remember { SnackbarHostState() }
+
+        val navigateUp: () -> Unit = {
+            when {
+                !state.isUserQuery && state.toolbarQuery != null -> screenModel.setToolbarQuery(null)
+                else -> navigator.pop()
+            }
+        }
 
         val onHelpClick = { uriHandler.openUri(LocalSource.HELP_URL) }
 
@@ -105,7 +112,7 @@ data class BrowseSourceScreen(
                         source = screenModel.source,
                         displayMode = screenModel.displayMode,
                         onDisplayModeChange = { screenModel.displayMode = it },
-                        navigateUp = navigator::pop,
+                        navigateUp = navigateUp,
                         onWebViewClick = onWebViewClick,
                         onHelpClick = onHelpClick,
                         onSearch = { screenModel.search(it) },
@@ -118,10 +125,10 @@ data class BrowseSourceScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         FilterChip(
-                            selected = state.currentFilter == BrowseSourceScreenModel.Filter.Popular,
+                            selected = state.listing == Listing.Popular,
                             onClick = {
-                                screenModel.reset()
-                                screenModel.search(GetRemoteManga.QUERY_POPULAR)
+                                screenModel.resetFilters()
+                                screenModel.setListing(Listing.Popular)
                             },
                             leadingIcon = {
                                 Icon(
@@ -137,10 +144,10 @@ data class BrowseSourceScreen(
                         )
                         if (screenModel.source.supportsLatest) {
                             FilterChip(
-                                selected = state.currentFilter == BrowseSourceScreenModel.Filter.Latest,
+                                selected = state.listing == Listing.Latest,
                                 onClick = {
-                                    screenModel.reset()
-                                    screenModel.search(GetRemoteManga.QUERY_LATEST)
+                                    screenModel.resetFilters()
+                                    screenModel.setListing(Listing.Latest)
                                 },
                                 leadingIcon = {
                                     Icon(
@@ -157,7 +164,7 @@ data class BrowseSourceScreen(
                         }
                         if (state.filters.isNotEmpty()) {
                             FilterChip(
-                                selected = state.currentFilter is BrowseSourceScreenModel.Filter.UserInput,
+                                selected = state.listing is Listing.Search,
                                 onClick = screenModel::openFilterSheet,
                                 leadingIcon = {
                                     Icon(

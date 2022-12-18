@@ -79,7 +79,7 @@ import eu.kanade.tachiyomi.source.model.Filter as SourceModelFilter
 
 class BrowseSourceScreenModel(
     private val sourceId: Long,
-    searchQuery: String?,
+    listingQuery: String?,
     private val sourceManager: SourceManager = Injekt.get(),
     sourcePreferences: SourcePreferences = Injekt.get(),
     private val libraryPreferences: LibraryPreferences = Injekt.get(),
@@ -95,7 +95,7 @@ class BrowseSourceScreenModel(
     private val updateManga: UpdateManga = Injekt.get(),
     private val insertTrack: InsertTrack = Injekt.get(),
     private val syncChaptersWithTrackServiceTwoWay: SyncChaptersWithTrackServiceTwoWay = Injekt.get(),
-) : StateScreenModel<BrowseSourceScreenModel.State>(State(Filter.valueOf(searchQuery))) {
+) : StateScreenModel<BrowseSourceScreenModel.State>(State(Listing.valueOf(listingQuery))) {
 
     private val loggedServices by lazy { Injekt.get<TrackManager>().services.filter { it.isLogged } }
 
@@ -109,15 +109,15 @@ class BrowseSourceScreenModel(
     private var filterSheet: SourceFilterSheet? = null
 
     /**
-     * Flow of Pager flow tied to [State.currentFilter]
+     * Flow of Pager flow tied to [State.listing]
      */
-    val mangaPagerFlowFlow = state.map { it.currentFilter }
+    val mangaPagerFlowFlow = state.map { it.listing }
         .distinctUntilChanged()
-        .map { currentFilter ->
+        .map { listing ->
             Pager(
                 PagingConfig(pageSize = 25),
             ) {
-                getRemoteManga.subscribe(sourceId, currentFilter.query ?: "", currentFilter.filters)
+                getRemoteManga.subscribe(sourceId, listing.query ?: "", listing.filters)
             }.flow
                 .map { pagingData ->
                     pagingData.map { sManga ->
@@ -133,7 +133,19 @@ class BrowseSourceScreenModel(
         .stateIn(coroutineScope, SharingStarted.Lazily, emptyFlow())
 
     init {
-        mutableState.update { it.copy(filters = source.getFilterList()) }
+        mutableState.update {
+            val initialListing = it.listing
+            val listing = if (initialListing is Listing.Search) {
+                initialListing.copy(filters = source.getFilterList())
+            } else {
+                initialListing
+            }
+
+            it.copy(
+                listing = listing,
+                filters = source.getFilterList(),
+            )
+        }
     }
 
     fun getColumnsPreference(orientation: Int): GridCells {
@@ -146,26 +158,21 @@ class BrowseSourceScreenModel(
         return if (columns == 0) GridCells.Adaptive(128.dp) else GridCells.Fixed(columns)
     }
 
-    fun reset() {
+    fun resetFilters() {
         mutableState.update { it.copy(filters = source.getFilterList()) }
     }
 
-    fun search(query: String? = null, filters: FilterList? = null) {
-        Filter.valueOf(query).let {
-            if (it !is Filter.UserInput) {
-                mutableState.update { state -> state.copy(currentFilter = it) }
-                return
-            }
-        }
+    fun setListing(listing: Listing) {
+        mutableState.update { it.copy(listing = listing) }
+    }
 
-        val input = if (state.value.currentFilter is Filter.UserInput) {
-            state.value.currentFilter as Filter.UserInput
-        } else {
-            Filter.UserInput()
-        }
+    fun search(query: String? = null, filters: FilterList? = null) {
+        val input = state.value.listing as? Listing.Search
+            ?: Listing.Search(query = null, filters = source.getFilterList())
+
         mutableState.update {
             it.copy(
-                currentFilter = input.copy(
+                listing = input.copy(
                     query = query ?: input.query,
                     filters = filters ?: input.filters,
                 ),
@@ -204,14 +211,14 @@ class BrowseSourceScreenModel(
         }
 
         mutableState.update {
-            val filter = if (genreExists) {
-                Filter.UserInput(filters = defaultFilters)
+            val listing = if (genreExists) {
+                Listing.Search(query = null, filters = defaultFilters)
             } else {
-                Filter.UserInput(query = genreName)
+                Listing.Search(query = genreName, filters = defaultFilters)
             }
             it.copy(
                 filters = defaultFilters,
-                currentFilter = filter,
+                listing = listing,
             )
         }
     }
@@ -359,34 +366,33 @@ class BrowseSourceScreenModel(
     }
 
     fun initFilterSheet(context: Context) {
-        val state = state.value
-        if (state.filters.isEmpty()) {
+        if (state.value.filters.isEmpty()) {
             return
         }
 
         filterSheet = SourceFilterSheet(
             context = context,
-            onFilterClicked = { search(filters = state.filters) },
+            onFilterClicked = { search(filters = state.value.filters) },
             onResetClicked = {
-                reset()
-                filterSheet?.setFilters(state.filterItems)
+                resetFilters()
+                filterSheet?.setFilters(state.value.filterItems)
             },
         )
 
-        filterSheet?.setFilters(state.filterItems)
+        filterSheet?.setFilters(state.value.filterItems)
     }
 
-    sealed class Filter(open val query: String?, open val filters: FilterList) {
-        object Popular : Filter(query = GetRemoteManga.QUERY_POPULAR, filters = FilterList())
-        object Latest : Filter(query = GetRemoteManga.QUERY_LATEST, filters = FilterList())
-        data class UserInput(override val query: String? = null, override val filters: FilterList = FilterList()) : Filter(query = query, filters = filters)
+    sealed class Listing(open val query: String?, open val filters: FilterList) {
+        object Popular : Listing(query = GetRemoteManga.QUERY_POPULAR, filters = FilterList())
+        object Latest : Listing(query = GetRemoteManga.QUERY_LATEST, filters = FilterList())
+        data class Search(override val query: String?, override val filters: FilterList) : Listing(query = query, filters = filters)
 
         companion object {
-            fun valueOf(query: String?): Filter {
+            fun valueOf(query: String?): Listing {
                 return when (query) {
                     GetRemoteManga.QUERY_POPULAR -> Popular
                     GetRemoteManga.QUERY_LATEST -> Latest
-                    else -> UserInput(query = query)
+                    else -> Search(query = query, filters = FilterList()) // filters are filled in later
                 }
             }
         }
@@ -404,17 +410,13 @@ class BrowseSourceScreenModel(
 
     @Immutable
     data class State(
-        val currentFilter: Filter,
+        val listing: Listing,
         val filters: FilterList = FilterList(),
         val toolbarQuery: String? = null,
         val dialog: Dialog? = null,
     ) {
-        val filterItems = filters.toItems()
-        val isUserQuery = currentFilter is Filter.UserInput && !currentFilter.query.isNullOrEmpty()
-        val searchQuery = when (currentFilter) {
-            is Filter.UserInput -> currentFilter.query
-            Filter.Latest, Filter.Popular -> null
-        }
+        val filterItems get() = filters.toItems()
+        val isUserQuery get() = listing is Listing.Search && !listing.query.isNullOrEmpty()
     }
 }
 
