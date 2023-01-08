@@ -67,6 +67,7 @@ import eu.kanade.tachiyomi.ui.reader.viewer.ReaderProgressIndicator
 import eu.kanade.tachiyomi.ui.reader.viewer.pager.R2LPagerViewer
 import eu.kanade.tachiyomi.ui.webview.WebViewActivity
 import eu.kanade.tachiyomi.util.Constants
+import eu.kanade.tachiyomi.util.lang.launchIO
 import eu.kanade.tachiyomi.util.lang.launchNonCancellable
 import eu.kanade.tachiyomi.util.lang.withUIContext
 import eu.kanade.tachiyomi.util.preference.toggle
@@ -558,15 +559,17 @@ class ReaderActivity : BaseActivity() {
         // Settings sheet
         with(binding.actionSettings) {
             setTooltip(R.string.action_settings)
-            val readerSettingSheetDialog = ReaderSettingsSheet(this@ReaderActivity)
+
+            var readerSettingSheet: ReaderSettingsSheet? = null
+
             setOnClickListener {
-                if (!readerSettingSheetDialog.isShowing()) {
-                    readerSettingSheetDialog.show()
-                }
+                if (readerSettingSheet?.isShowing == true) return@setOnClickListener
+                readerSettingSheet = ReaderSettingsSheet(this@ReaderActivity).apply { show() }
             }
 
             setOnLongClickListener {
-                ReaderSettingsSheet(this@ReaderActivity, showColorFilterSettings = true).show()
+                if (readerSettingSheet?.isShowing == true) return@setOnLongClickListener false
+                readerSettingSheet = ReaderSettingsSheet(this@ReaderActivity, showColorFilterSettings = true).apply { show() }
                 true
             }
         }
@@ -714,10 +717,12 @@ class ReaderActivity : BaseActivity() {
     private fun openChapterInWebview() {
         val manga = viewModel.manga ?: return
         val source = viewModel.getSource() ?: return
-        val url = viewModel.getChapterUrl() ?: return
-
-        val intent = WebViewActivity.newIntent(this, url, source.id, manga.title)
-        startActivity(intent)
+        lifecycleScope.launchIO {
+            viewModel.getChapterUrl()?.let { url ->
+                val intent = WebViewActivity.newIntent(this@ReaderActivity, url, source.id, manga.title)
+                withUIContext { startActivity(intent) }
+            }
+        }
     }
 
     private fun showReadingModeToast(mode: Int) {

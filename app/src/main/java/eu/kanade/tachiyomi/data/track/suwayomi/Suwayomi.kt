@@ -1,40 +1,32 @@
-package eu.kanade.tachiyomi.data.track.komga
+package eu.kanade.tachiyomi.data.track.suwayomi
 
 import android.content.Context
 import android.graphics.Color
 import androidx.annotation.StringRes
-import eu.kanade.domain.manga.model.Manga
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.database.models.Track
 import eu.kanade.tachiyomi.data.track.EnhancedTrackService
 import eu.kanade.tachiyomi.data.track.TrackService
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
 import eu.kanade.tachiyomi.source.Source
-import okhttp3.Dns
-import okhttp3.OkHttpClient
+import eu.kanade.domain.manga.model.Manga as DomainManga
 import eu.kanade.domain.track.model.Track as DomainTrack
 
-class Komga(private val context: Context, id: Long) : TrackService(id), EnhancedTrackService {
+class Suwayomi(private val context: Context, id: Long) : TrackService(id), EnhancedTrackService {
+    val api by lazy { TachideskApi() }
+
+    @StringRes
+    override fun nameRes() = R.string.tracker_suwayomi
+
+    override fun getLogo() = R.drawable.ic_tracker_suwayomi
+
+    override fun getLogoColor() = Color.rgb(255, 35, 35) // TODO
 
     companion object {
         const val UNREAD = 1
         const val READING = 2
         const val COMPLETED = 3
     }
-
-    override val client: OkHttpClient =
-        networkService.client.newBuilder()
-            .dns(Dns.SYSTEM) // don't use DNS over HTTPS as it breaks IP addressing
-            .build()
-
-    val api by lazy { KomgaApi(client) }
-
-    @StringRes
-    override fun nameRes() = R.string.tracker_komga
-
-    override fun getLogo() = R.drawable.ic_tracker_komga
-
-    override fun getLogoColor() = Color.rgb(51, 37, 50)
 
     override fun getStatusList() = listOf(UNREAD, READING, COMPLETED)
 
@@ -76,7 +68,7 @@ class Komga(private val context: Context, id: Long) : TrackService(id), Enhanced
     }
 
     override suspend fun search(query: String): List<TrackSearch> {
-        TODO("Not yet implemented: search")
+        TODO("Not yet implemented")
     }
 
     override suspend fun refresh(track: Track): Track {
@@ -90,25 +82,17 @@ class Komga(private val context: Context, id: Long) : TrackService(id), Enhanced
         saveCredentials("user", "pass")
     }
 
-    // TrackService.isLogged works by checking that credentials are saved.
-    // By saving dummy, unused credentials, we can activate the tracker simply by login/logout
     override fun loginNoop() {
         saveCredentials("user", "pass")
     }
 
-    override fun getAcceptedSources() = listOf("eu.kanade.tachiyomi.extension.all.komga.Komga")
+    override fun getAcceptedSources(): List<String> = listOf("eu.kanade.tachiyomi.extension.all.tachidesk.Tachidesk")
 
-    override suspend fun match(manga: Manga): TrackSearch? =
-        try {
-            api.getTrackSearch(manga.url)
-        } catch (e: Exception) {
-            null
-        }
+    override suspend fun match(manga: DomainManga): TrackSearch = api.getTrackSearch(manga.url)
 
-    override fun isTrackFrom(track: DomainTrack, manga: Manga, source: Source?): Boolean =
-        track.remoteUrl == manga.url && source?.let { accept(it) } == true
+    override fun isTrackFrom(track: DomainTrack, manga: DomainManga, source: Source?): Boolean = source?.let { accept(it) } == true
 
-    override fun migrateTrack(track: DomainTrack, manga: Manga, newSource: Source): DomainTrack? =
+    override fun migrateTrack(track: DomainTrack, manga: DomainManga, newSource: Source): DomainTrack? =
         if (accept(newSource)) {
             track.copy(remoteUrl = manga.url)
         } else {
