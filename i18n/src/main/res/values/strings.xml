@@ -305,7 +305,6 @@
     <string name="ext_installer_shizuku" translatable="false">Shizuku</string>
     <string name="ext_installer_shizuku_stopped">Shizuku is not running</string>
     <string name="ext_installer_shizuku_unavailable_dialog">Install and start Shizuku to use Shizuku as extension installer.</string>
-    <string name="ext_miui_warning">If installing extensions isn\'t working, try disabling MIUI Optimization or tap here to download from the website instead.</string>
 
       <!-- Reader section -->
     <string name="pref_fullscreen">Fullscreen</string>
@@ -882,6 +881,7 @@
     <string name="information_empty_category">You have no categories. Tap the plus button to create one for organizing your library.</string>
     <string name="information_empty_category_dialog">You don\'t have any categories yet.</string>
     <string name="information_cloudflare_bypass_failure">Failed to bypass Cloudflare</string>
+    <string name="information_required_plain">*required</string>
     <!-- Do not translate "WebView" -->
     <string name="information_webview_required">WebView is required for Tachiyomi</string>
     <!-- Do not translate "WebView" -->
