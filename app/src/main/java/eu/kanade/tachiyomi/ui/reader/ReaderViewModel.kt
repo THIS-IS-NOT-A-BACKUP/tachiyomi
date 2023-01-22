@@ -9,16 +9,15 @@ import androidx.lifecycle.viewModelScope
 import eu.kanade.domain.base.BasePreferences
 import eu.kanade.domain.chapter.interactor.GetChapterByMangaId
 import eu.kanade.domain.chapter.interactor.UpdateChapter
-import eu.kanade.domain.chapter.model.ChapterUpdate
 import eu.kanade.domain.chapter.model.toDbChapter
 import eu.kanade.domain.download.service.DownloadPreferences
 import eu.kanade.domain.history.interactor.GetNextChapters
 import eu.kanade.domain.history.interactor.UpsertHistory
-import eu.kanade.domain.history.model.HistoryUpdate
 import eu.kanade.domain.manga.interactor.GetManga
 import eu.kanade.domain.manga.interactor.SetMangaViewerFlags
-import eu.kanade.domain.manga.model.Manga
 import eu.kanade.domain.manga.model.isLocal
+import eu.kanade.domain.manga.model.orientationType
+import eu.kanade.domain.manga.model.readingModeType
 import eu.kanade.domain.track.interactor.GetTracks
 import eu.kanade.domain.track.interactor.InsertTrack
 import eu.kanade.domain.track.model.toDbTrack
@@ -76,6 +75,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
+import tachiyomi.domain.chapter.model.ChapterUpdate
+import tachiyomi.domain.history.model.HistoryUpdate
+import tachiyomi.domain.manga.model.Manga
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.util.Date
@@ -232,10 +234,10 @@ class ReaderViewModel(
     }
 
     /**
-     * Called when the activity is saved and not changing configurations. It updates the database
+     * Called when the activity is saved. It updates the database
      * to persist the current progress of the active chapter.
      */
-    fun onSaveInstanceStateNonConfigurationChange() {
+    fun onSaveInstanceState() {
         val currentChapter = getCurrentChapter() ?: return
         viewModelScope.launchNonCancellable {
             saveChapterProgress(currentChapter)
@@ -512,6 +514,7 @@ class ReaderViewModel(
     private suspend fun saveChapterProgress(readerChapter: ReaderChapter) {
         if (!incognitoMode || hasTrackers) {
             val chapter = readerChapter.chapter
+            getCurrentChapter()?.requestedPage = chapter.last_page_read
             updateChapter.await(
                 ChapterUpdate(
                     id = chapter.id!!,

@@ -15,22 +15,19 @@ import eu.kanade.core.util.addOrRemove
 import eu.kanade.data.chapter.NoChaptersException
 import eu.kanade.domain.category.interactor.GetCategories
 import eu.kanade.domain.category.interactor.SetMangaCategories
-import eu.kanade.domain.category.model.Category
 import eu.kanade.domain.chapter.interactor.SetMangaDefaultChapterFlags
 import eu.kanade.domain.chapter.interactor.SetReadStatus
 import eu.kanade.domain.chapter.interactor.SyncChaptersWithSource
 import eu.kanade.domain.chapter.interactor.UpdateChapter
-import eu.kanade.domain.chapter.model.Chapter
-import eu.kanade.domain.chapter.model.ChapterUpdate
 import eu.kanade.domain.download.service.DownloadPreferences
 import eu.kanade.domain.library.service.LibraryPreferences
 import eu.kanade.domain.manga.interactor.GetDuplicateLibraryManga
 import eu.kanade.domain.manga.interactor.GetMangaWithChapters
 import eu.kanade.domain.manga.interactor.SetMangaChapterFlags
 import eu.kanade.domain.manga.interactor.UpdateManga
-import eu.kanade.domain.manga.model.Manga
-import eu.kanade.domain.manga.model.TriStateFilter
+import eu.kanade.domain.manga.model.downloadedFilter
 import eu.kanade.domain.manga.model.isLocal
+import eu.kanade.domain.manga.model.toSManga
 import eu.kanade.domain.track.interactor.GetTracks
 import eu.kanade.domain.track.model.toDbTrack
 import eu.kanade.domain.ui.UiPreferences
@@ -48,6 +45,7 @@ import eu.kanade.tachiyomi.network.HttpException
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.SourceManager
 import eu.kanade.tachiyomi.ui.manga.track.TrackItem
+import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.util.chapter.getChapterSort
 import eu.kanade.tachiyomi.util.chapter.getNextUnread
 import eu.kanade.tachiyomi.util.lang.launchIO
@@ -69,6 +67,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import logcat.LogPriority
+import tachiyomi.domain.category.model.Category
+import tachiyomi.domain.chapter.model.Chapter
+import tachiyomi.domain.chapter.model.ChapterUpdate
+import tachiyomi.domain.manga.model.Manga
+import tachiyomi.domain.manga.model.TriStateFilter
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.text.DecimalFormat
@@ -80,6 +83,7 @@ class MangaInfoScreenModel(
     private val isFromSource: Boolean,
     private val downloadPreferences: DownloadPreferences = Injekt.get(),
     private val libraryPreferences: LibraryPreferences = Injekt.get(),
+    private val readerPreferences: ReaderPreferences = Injekt.get(),
     private val uiPreferences: UiPreferences = Injekt.get(),
     private val trackManager: TrackManager = Injekt.get(),
     private val downloadManager: DownloadManager = Injekt.get(),
@@ -112,10 +116,14 @@ class MangaInfoScreenModel(
     private val isFavorited: Boolean
         get() = manga?.favorite ?: false
 
-    private val processedChapters: Sequence<ChapterItem>?
+    private val allChapters: List<ChapterItem>?
+        get() = successState?.chapters
+
+    private val filteredChapters: Sequence<ChapterItem>?
         get() = successState?.processedChapters
 
     val relativeTime by uiPreferences.relativeTime().asState(coroutineScope)
+    val skipFiltered by readerPreferences.skipFiltered().asState(coroutineScope)
     val dateFormat by mutableStateOf(UiPreferences.dateFormat(uiPreferences.dateFormat().get()))
 
     private val selectedPositions: Array<Int> = arrayOf(-1, -1) // first and last selected index in list
@@ -518,6 +526,13 @@ class MangaInfoScreenModel(
     }
 
     /**
+     * Returns the list of filtered or all chapter items if [skipFiltered] is false.
+     */
+    fun getChapterItems(): List<ChapterItem> {
+        return if (skipFiltered) filteredChapters.orEmpty().toList() else allChapters.orEmpty()
+    }
+
+    /**
      * Returns the next unread chapter or null if everything is read.
      */
     fun getNextUnreadChapter(): Chapter? {
@@ -526,17 +541,15 @@ class MangaInfoScreenModel(
     }
 
     fun getUnreadChapters(): List<Chapter> {
-        return successState?.processedChapters
-            ?.filter { (chapter, dlStatus) -> !chapter.read && dlStatus == Download.State.NOT_DOWNLOADED }
-            ?.map { it.chapter }
-            ?.toList()
-            ?: emptyList()
+        return getChapterItems()
+            .filter { (chapter, dlStatus) -> !chapter.read && dlStatus == Download.State.NOT_DOWNLOADED }
+            .map { it.chapter }
     }
 
     fun getUnreadChaptersSorted(): List<Chapter> {
         val manga = successState?.manga ?: return emptyList()
-        val chapters = getUnreadChapters().sortedWith(getChapterSort(manga))
-        return if (manga.sortDescending()) chapters.reversed() else chapters
+        val chaptersSorted = getUnreadChapters().sortedWith(getChapterSort(manga))
+        return if (manga.sortDescending()) chaptersSorted.reversed() else chaptersSorted
     }
 
     fun startDownload(
@@ -604,7 +617,7 @@ class MangaInfoScreenModel(
                 return
             }
             DownloadAction.UNREAD_CHAPTERS -> getUnreadChapters()
-            DownloadAction.ALL_CHAPTERS -> successState?.chapters?.map { it.chapter }
+            DownloadAction.ALL_CHAPTERS -> getChapterItems().map { it.chapter }
         }
         if (!chaptersToDownload.isNullOrEmpty()) {
             startDownload(chaptersToDownload, false)
@@ -619,7 +632,7 @@ class MangaInfoScreenModel(
 
     fun markPreviousChapterRead(pointer: Chapter) {
         val successState = successState ?: return
-        val chapters = processedChapters.orEmpty().map { it.chapter }.toList()
+        val chapters = filteredChapters.orEmpty().map { it.chapter }.toList()
         val prevChapters = if (successState.manga.sortDescending()) chapters.asReversed() else chapters
         val pointerPos = prevChapters.indexOf(pointer)
         if (pointerPos != -1) markChaptersRead(prevChapters.take(pointerPos), true)
@@ -917,7 +930,7 @@ class MangaInfoScreenModel(
     }
 
     private fun showDownloadCustomDialog() {
-        val max = processedChapters?.count() ?: return
+        val max = getChapterItems().count()
         mutableState.update { state ->
             when (state) {
                 MangaScreenState.Loading -> state

@@ -19,7 +19,6 @@ import eu.kanade.core.prefs.asState
 import eu.kanade.core.prefs.mapAsCheckboxState
 import eu.kanade.domain.category.interactor.GetCategories
 import eu.kanade.domain.category.interactor.SetMangaCategories
-import eu.kanade.domain.category.model.Category
 import eu.kanade.domain.chapter.interactor.GetChapterByMangaId
 import eu.kanade.domain.chapter.interactor.SetMangaDefaultChapterFlags
 import eu.kanade.domain.chapter.interactor.SyncChaptersWithTrackServiceTwoWay
@@ -28,9 +27,9 @@ import eu.kanade.domain.manga.interactor.GetDuplicateLibraryManga
 import eu.kanade.domain.manga.interactor.GetManga
 import eu.kanade.domain.manga.interactor.NetworkToLocalManga
 import eu.kanade.domain.manga.interactor.UpdateManga
-import eu.kanade.domain.manga.model.Manga
+import eu.kanade.domain.manga.model.copyFrom
 import eu.kanade.domain.manga.model.toDomainManga
-import eu.kanade.domain.manga.model.toMangaUpdate
+import eu.kanade.domain.manga.model.toSManga
 import eu.kanade.domain.source.interactor.GetRemoteManga
 import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.domain.track.interactor.InsertTrack
@@ -71,6 +70,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
+import tachiyomi.domain.category.model.Category
+import tachiyomi.domain.manga.model.Manga
+import tachiyomi.domain.manga.model.toMangaUpdate
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.util.Date
