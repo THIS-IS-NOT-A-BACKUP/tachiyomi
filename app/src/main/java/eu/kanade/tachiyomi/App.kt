@@ -42,7 +42,6 @@ import eu.kanade.tachiyomi.util.system.WebViewUtil
 import eu.kanade.tachiyomi.util.system.animatorDurationScale
 import eu.kanade.tachiyomi.util.system.isPreviewBuildType
 import eu.kanade.tachiyomi.util.system.isReleaseBuildType
-import eu.kanade.tachiyomi.util.system.logcat
 import eu.kanade.tachiyomi.util.system.notification
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
@@ -54,6 +53,7 @@ import org.acra.config.httpSender
 import org.acra.ktx.initAcra
 import org.acra.sender.HttpSender
 import org.conscrypt.Conscrypt
+import tachiyomi.core.util.system.logcat
 import tachiyomi.presentation.widget.TachiyomiWidgetManager
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
@@ -124,8 +124,8 @@ class App : Application(), DefaultLifecycleObserver, ImageLoaderFactory {
         setAppCompatDelegateThemeMode(Injekt.get<UiPreferences>().themeMode().get())
 
         // Updates widget update
-        with(TachiyomiWidgetManager) {
-            init(ProcessLifecycleOwner.get().lifecycleScope, Injekt.get())
+        with(TachiyomiWidgetManager(Injekt.get())) {
+            init(ProcessLifecycleOwner.get().lifecycleScope)
         }
 
         if (!LogcatLogger.isInstalled && networkPreferences.verboseLogging().get()) {
