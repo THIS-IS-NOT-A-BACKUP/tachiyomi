@@ -22,7 +22,7 @@ android {
 
     defaultConfig {
         applicationId = "eu.kanade.tachiyomi"
-        versionCode = 96
+        versionCode = 97
         versionName = "0.14.4"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
@@ -241,7 +241,6 @@ dependencies {
     implementation(libs.aboutLibraries.compose)
     implementation(libs.cascade)
     implementation(libs.bundles.voyager)
-    implementation(libs.wheelpicker)
     implementation(libs.materialmotion.core)
 
     // Logging

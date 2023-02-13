@@ -1,9 +1,9 @@
 package eu.kanade.tachiyomi
 
 import android.content.Context
-import android.os.Build
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
+import androidx.work.WorkManager
 import eu.kanade.domain.backup.service.BackupPreferences
 import eu.kanade.domain.base.BasePreferences
 import eu.kanade.domain.library.service.LibraryPreferences
@@ -15,8 +15,6 @@ import eu.kanade.tachiyomi.data.library.LibraryUpdateJob
 import eu.kanade.tachiyomi.data.preference.MANGA_NON_COMPLETED
 import eu.kanade.tachiyomi.data.preference.PreferenceValues
 import eu.kanade.tachiyomi.data.track.TrackManager
-import eu.kanade.tachiyomi.data.updater.AppUpdateJob
-import eu.kanade.tachiyomi.extension.ExtensionUpdateJob
 import eu.kanade.tachiyomi.network.NetworkPreferences
 import eu.kanade.tachiyomi.network.PREF_DOH_CLOUDFLARE
 import eu.kanade.tachiyomi.ui.reader.setting.OrientationType
@@ -56,10 +54,6 @@ object Migrations {
             lastVersionCode.set(BuildConfig.VERSION_CODE)
 
             // Always set up background tasks to ensure they're running
-            if (BuildConfig.INCLUDE_UPDATER) {
-                AppUpdateJob.setupTask(context)
-            }
-            ExtensionUpdateJob.setupTask(context)
             LibraryUpdateJob.setupTask(context)
             BackupCreatorJob.setupTask(context)
 
@@ -72,9 +66,6 @@ object Migrations {
 
             if (oldVersion < 14) {
                 // Restore jobs after upgrading to Evernote's job scheduler.
-                if (BuildConfig.INCLUDE_UPDATER) {
-                    AppUpdateJob.setupTask(context)
-                }
                 LibraryUpdateJob.setupTask(context)
             }
             if (oldVersion < 15) {
@@ -105,14 +96,8 @@ object Migrations {
             }
             if (oldVersion < 43) {
                 // Restore jobs after migrating from Evernote's job scheduler to WorkManager.
-                if (BuildConfig.INCLUDE_UPDATER) {
-                    AppUpdateJob.setupTask(context)
-                }
                 LibraryUpdateJob.setupTask(context)
                 BackupCreatorJob.setupTask(context)
-
-                // New extension update check job
-                ExtensionUpdateJob.setupTask(context)
             }
             if (oldVersion < 44) {
                 // Reset sorting preference if using removed sort by source
@@ -172,18 +157,8 @@ object Migrations {
                         putInt("pref_rotation_type_key", 1)
                     }
                 }
-
-                // Disable update check for Android 5.x users
-                if (BuildConfig.INCLUDE_UPDATER && Build.VERSION.SDK_INT <= Build.VERSION_CODES.M) {
-                    AppUpdateJob.cancelTask(context)
-                }
             }
             if (oldVersion < 60) {
-                // Re-enable update check that was previously accidentally disabled for M
-                if (BuildConfig.INCLUDE_UPDATER && Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
-                    AppUpdateJob.setupTask(context)
-                }
-
                 // Migrate Rotation and Viewer values to default values for viewer_flags
                 val newOrientation = when (prefs.getInt("pref_rotation_type_key", 1)) {
                     1 -> OrientationType.FREE.flagValue
@@ -351,6 +326,14 @@ object Migrations {
             if (oldVersion < 96) {
                 LibraryUpdateJob.cancelAllWorks(context)
                 LibraryUpdateJob.setupTask(context)
+            }
+            if (oldVersion < 97) {
+                // Removed background jobs
+                WorkManager.getInstance(context).cancelAllWorkByTag("UpdateChecker")
+                WorkManager.getInstance(context).cancelAllWorkByTag("ExtensionUpdate")
+                prefs.edit {
+                    remove("automatic_ext_updates")
+                }
             }
             return true
         }
