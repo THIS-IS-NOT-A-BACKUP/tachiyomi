@@ -32,27 +32,20 @@ import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.coroutineScope
 import cafe.adriel.voyager.core.model.rememberScreenModel
-import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import eu.kanade.core.navigation.Screen
 import eu.kanade.domain.chapter.interactor.SyncChaptersWithTrackServiceTwoWay
-import eu.kanade.domain.manga.interactor.GetManga
-import eu.kanade.domain.manga.interactor.GetMangaWithChapters
-import eu.kanade.domain.track.interactor.DeleteTrack
-import eu.kanade.domain.track.interactor.GetTracks
-import eu.kanade.domain.track.interactor.InsertTrack
 import eu.kanade.domain.track.model.toDbTrack
 import eu.kanade.domain.track.model.toDomainTrack
 import eu.kanade.domain.ui.UiPreferences
-import eu.kanade.presentation.components.AlertDialogContent
-import eu.kanade.presentation.manga.TrackChapterSelector
-import eu.kanade.presentation.manga.TrackDateSelector
-import eu.kanade.presentation.manga.TrackInfoDialogHome
-import eu.kanade.presentation.manga.TrackScoreSelector
-import eu.kanade.presentation.manga.TrackServiceSearch
-import eu.kanade.presentation.manga.TrackStatusSelector
-import eu.kanade.presentation.util.padding
+import eu.kanade.presentation.track.TrackChapterSelector
+import eu.kanade.presentation.track.TrackDateSelector
+import eu.kanade.presentation.track.TrackInfoDialogHome
+import eu.kanade.presentation.track.TrackScoreSelector
+import eu.kanade.presentation.track.TrackServiceSearch
+import eu.kanade.presentation.track.TrackStatusSelector
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.database.models.Track
 import eu.kanade.tachiyomi.data.track.EnhancedTrackService
@@ -73,6 +66,13 @@ import tachiyomi.core.util.lang.launchNonCancellable
 import tachiyomi.core.util.lang.withIOContext
 import tachiyomi.core.util.lang.withUIContext
 import tachiyomi.core.util.system.logcat
+import tachiyomi.domain.manga.interactor.GetManga
+import tachiyomi.domain.manga.interactor.GetMangaWithChapters
+import tachiyomi.domain.track.interactor.DeleteTrack
+import tachiyomi.domain.track.interactor.GetTracks
+import tachiyomi.domain.track.interactor.InsertTrack
+import tachiyomi.presentation.core.components.material.AlertDialogContent
+import tachiyomi.presentation.core.components.material.padding
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.time.Instant
@@ -83,7 +83,7 @@ data class TrackInfoDialogHomeScreen(
     private val mangaId: Long,
     private val mangaTitle: String,
     private val sourceId: Long,
-) : Screen {
+) : Screen() {
 
     @Composable
     override fun Content() {
@@ -265,7 +265,7 @@ data class TrackInfoDialogHomeScreen(
 private data class TrackStatusSelectorScreen(
     private val track: Track,
     private val serviceId: Long,
-) : Screen {
+) : Screen() {
 
     @Composable
     override fun Content() {
@@ -314,7 +314,7 @@ private data class TrackStatusSelectorScreen(
 private data class TrackChapterSelectorScreen(
     private val track: Track,
     private val serviceId: Long,
-) : Screen {
+) : Screen() {
 
     @Composable
     override fun Content() {
@@ -369,7 +369,7 @@ private data class TrackChapterSelectorScreen(
 private data class TrackScoreSelectorScreen(
     private val track: Track,
     private val serviceId: Long,
-) : Screen {
+) : Screen() {
 
     @Composable
     override fun Content() {
@@ -420,7 +420,7 @@ private data class TrackDateSelectorScreen(
     private val track: Track,
     private val serviceId: Long,
     private val start: Boolean,
-) : Screen {
+) : Screen() {
 
     @Composable
     override fun Content() {
@@ -514,7 +514,7 @@ private data class TrackDateRemoverScreen(
     private val track: Track,
     private val serviceId: Long,
     private val start: Boolean,
-) : Screen {
+) : Screen() {
 
     @Composable
     override fun Content() {
@@ -597,7 +597,7 @@ data class TrackServiceSearchScreen(
     private val initialQuery: String,
     private val currentUrl: String?,
     private val serviceId: Long,
-) : Screen {
+) : Screen() {
 
     @Composable
     override fun Content() {
