@@ -17,7 +17,6 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import eu.kanade.domain.chapter.interactor.SyncChaptersWithSource
 import eu.kanade.domain.chapter.interactor.SyncChaptersWithTrackServiceTwoWay
-import eu.kanade.domain.download.service.DownloadPreferences
 import eu.kanade.domain.library.service.LibraryPreferences
 import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.domain.manga.model.copyFrom
@@ -38,7 +37,6 @@ import eu.kanade.tachiyomi.data.preference.MANGA_NON_READ
 import eu.kanade.tachiyomi.data.track.EnhancedTrackService
 import eu.kanade.tachiyomi.data.track.TrackManager
 import eu.kanade.tachiyomi.data.track.TrackService
-import eu.kanade.tachiyomi.source.SourceManager
 import eu.kanade.tachiyomi.source.UnmeteredSource
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.model.UpdateStrategy
@@ -67,11 +65,14 @@ import tachiyomi.domain.category.model.Category
 import tachiyomi.domain.chapter.interactor.GetChapterByMangaId
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.chapter.model.NoChaptersException
+import tachiyomi.domain.download.service.DownloadPreferences
 import tachiyomi.domain.library.model.LibraryManga
 import tachiyomi.domain.manga.interactor.GetLibraryManga
 import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.toMangaUpdate
+import tachiyomi.domain.source.model.SourceNotInstalledException
+import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.track.interactor.GetTracks
 import tachiyomi.domain.track.interactor.InsertTrack
 import uy.kohesive.injekt.Injekt
@@ -284,7 +285,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                                                 val errorMessage = when (e) {
                                                     is NoChaptersException -> context.getString(R.string.no_chapters_error)
                                                     // failedUpdates will already have the source, don't need to copy it into the message
-                                                    is SourceManager.SourceNotInstalledException -> context.getString(R.string.loader_not_implemented_error)
+                                                    is SourceNotInstalledException -> context.getString(R.string.loader_not_implemented_error)
                                                     else -> e.message
                                                 }
                                                 failedUpdates.add(manga to errorMessage)
