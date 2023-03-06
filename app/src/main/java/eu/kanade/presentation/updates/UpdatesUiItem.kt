@@ -15,7 +15,9 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,7 +50,7 @@ import tachiyomi.presentation.core.util.selectedBackground
 import java.util.Date
 import kotlin.time.Duration.Companion.minutes
 
-fun LazyListScope.updatesLastUpdatedItem(
+internal fun LazyListScope.updatesLastUpdatedItem(
     lastUpdated: Long,
 ) {
     item(key = "updates-lastUpdated") {
@@ -78,7 +80,7 @@ fun LazyListScope.updatesLastUpdatedItem(
     }
 }
 
-fun LazyListScope.updatesUiItems(
+internal fun LazyListScope.updatesUiItems(
     uiModels: List<UpdatesUiModel>,
     selectionMode: Boolean,
     onUpdateSelected: (UpdatesItem, Boolean, Boolean, Boolean) -> Unit,
@@ -144,7 +146,7 @@ fun LazyListScope.updatesUiItems(
 }
 
 @Composable
-fun UpdatesUiItem(
+private fun UpdatesUiItem(
     modifier: Modifier,
     update: UpdatesWithRelations,
     selected: Boolean,
@@ -191,12 +193,22 @@ fun UpdatesUiItem(
                 text = update.mangaTitle,
                 maxLines = 1,
                 style = MaterialTheme.typography.bodyMedium,
+                color = LocalContentColor.current.copy(alpha = textAlpha),
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.alpha(textAlpha),
             )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 var textHeight by remember { mutableStateOf(0) }
+                if (!update.read) {
+                    Icon(
+                        imageVector = Icons.Filled.Circle,
+                        contentDescription = stringResource(R.string.unread),
+                        modifier = Modifier
+                            .height(8.dp)
+                            .padding(end = 4.dp),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
                 if (update.bookmark) {
                     Icon(
                         imageVector = Icons.Filled.Bookmark,
@@ -211,19 +223,19 @@ fun UpdatesUiItem(
                     text = update.chapterName,
                     maxLines = 1,
                     style = MaterialTheme.typography.bodySmall,
+                    color = LocalContentColor.current.copy(alpha = textAlpha),
                     overflow = TextOverflow.Ellipsis,
                     onTextLayout = { textHeight = it.size.height },
                     modifier = Modifier
-                        .weight(weight = 1f, fill = false)
-                        .alpha(textAlpha),
+                        .weight(weight = 1f, fill = false),
                 )
                 if (readProgress != null) {
                     DotSeparatorText()
                     Text(
                         text = readProgress,
                         maxLines = 1,
+                        color = LocalContentColor.current.copy(alpha = ReadItemAlpha),
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.alpha(ReadItemAlpha),
                     )
                 }
             }
