@@ -3,14 +3,12 @@ package eu.kanade.tachiyomi
 import android.content.Context
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
-import androidx.work.WorkManager
 import eu.kanade.domain.base.BasePreferences
 import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.tachiyomi.core.security.SecurityPreferences
-import eu.kanade.tachiyomi.data.backup.BackupCreatorJob
+import eu.kanade.tachiyomi.data.backup.BackupCreateJob
 import eu.kanade.tachiyomi.data.library.LibraryUpdateJob
-import eu.kanade.tachiyomi.data.preference.PreferenceValues
 import eu.kanade.tachiyomi.data.track.TrackManager
 import eu.kanade.tachiyomi.network.NetworkPreferences
 import eu.kanade.tachiyomi.network.PREF_DOH_CLOUDFLARE
@@ -20,6 +18,7 @@ import eu.kanade.tachiyomi.util.preference.minusAssign
 import eu.kanade.tachiyomi.util.preference.plusAssign
 import eu.kanade.tachiyomi.util.system.DeviceUtil
 import eu.kanade.tachiyomi.util.system.toast
+import eu.kanade.tachiyomi.util.system.workManager
 import tachiyomi.core.preference.PreferenceStore
 import tachiyomi.core.preference.getEnum
 import tachiyomi.domain.backup.service.BackupPreferences
@@ -57,7 +56,7 @@ object Migrations {
 
             // Always set up background tasks to ensure they're running
             LibraryUpdateJob.setupTask(context)
-            BackupCreatorJob.setupTask(context)
+            BackupCreateJob.setupTask(context)
 
             // Fresh install
             if (oldVersion == 0) {
@@ -99,7 +98,7 @@ object Migrations {
             if (oldVersion < 43) {
                 // Restore jobs after migrating from Evernote's job scheduler to WorkManager.
                 LibraryUpdateJob.setupTask(context)
-                BackupCreatorJob.setupTask(context)
+                BackupCreateJob.setupTask(context)
             }
             if (oldVersion < 44) {
                 // Reset sorting preference if using removed sort by source
@@ -244,12 +243,12 @@ object Migrations {
                 if (oldSecureScreen) {
                     securityPreferences.secureScreen().set(SecurityPreferences.SecureScreenMode.ALWAYS)
                 }
-                if (DeviceUtil.isMiui && basePreferences.extensionInstaller().get() == PreferenceValues.ExtensionInstaller.PACKAGEINSTALLER) {
-                    basePreferences.extensionInstaller().set(PreferenceValues.ExtensionInstaller.LEGACY)
+                if (DeviceUtil.isMiui && basePreferences.extensionInstaller().get() == BasePreferences.ExtensionInstaller.PACKAGEINSTALLER) {
+                    basePreferences.extensionInstaller().set(BasePreferences.ExtensionInstaller.LEGACY)
                 }
             }
             if (oldVersion < 76) {
-                BackupCreatorJob.setupTask(context)
+                BackupCreateJob.setupTask(context)
             }
             if (oldVersion < 77) {
                 val oldReaderTap = prefs.getBoolean("reader_tap", false)
@@ -284,7 +283,7 @@ object Migrations {
                 }
                 if (backupPreferences.backupInterval().get() == 0) {
                     backupPreferences.backupInterval().set(12)
-                    BackupCreatorJob.setupTask(context)
+                    BackupCreateJob.setupTask(context)
                 }
             }
             if (oldVersion < 85) {
@@ -331,8 +330,8 @@ object Migrations {
             }
             if (oldVersion < 97) {
                 // Removed background jobs
-                WorkManager.getInstance(context).cancelAllWorkByTag("UpdateChecker")
-                WorkManager.getInstance(context).cancelAllWorkByTag("ExtensionUpdate")
+                context.workManager.cancelAllWorkByTag("UpdateChecker")
+                context.workManager.cancelAllWorkByTag("ExtensionUpdate")
                 prefs.edit {
                     remove("automatic_ext_updates")
                 }
