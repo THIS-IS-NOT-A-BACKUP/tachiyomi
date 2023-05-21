@@ -5,7 +5,7 @@ coil_version = "2.3.0"
 shizuku_version = "12.2.0"
 sqlite = "2.3.1"
 sqldelight = "1.5.5"
-leakcanary = "2.10"
+leakcanary = "2.11"
 voyager = "1.0.0-rc06"
 richtext = "0.16.0"
 
@@ -36,7 +36,7 @@ junrar = "com.github.junrar:junrar:7.5.4"
 
 sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqlite" }
 sqlite-ktx = { module = "androidx.sqlite:sqlite-ktx", version.ref = "sqlite" }
-sqlite-android = "com.github.requery:sqlite-android:3.41.1"
+sqlite-android = "com.github.requery:sqlite-android:3.42.0"
 
 preferencektx = "androidx.preference:preference-ktx:1.2.0"
 
@@ -60,8 +60,7 @@ flexible-adapter-ui = "com.github.arkon.FlexibleAdapter:flexible-adapter-ui:c801
 photoview = "com.github.chrisbanes:PhotoView:2.3.0"
 directionalviewpager = "com.github.tachiyomiorg:DirectionalViewPager:1.0.0"
 insetter = "dev.chrisbanes.insetter:insetter:0.6.1"
-compose-cascade = "me.saket.cascade:cascade-compose:2.0.0-rc02"
-compose-materialmotion = "io.github.fornewid:material-motion-compose-core:0.12.3"
+compose-materialmotion = "io.github.fornewid:material-motion-compose-core:1.0.2"
 compose-simpleicons = "br.com.devsrsouza.compose.icons.android:simple-icons:1.0.0"
 
 logcat = "com.squareup.logcat:logcat:0.1"
