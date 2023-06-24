@@ -58,6 +58,7 @@ import eu.kanade.tachiyomi.ui.reader.model.ReaderChapter
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
 import eu.kanade.tachiyomi.ui.reader.model.ViewerChapters
 import eu.kanade.tachiyomi.ui.reader.setting.OrientationType
+import eu.kanade.tachiyomi.ui.reader.setting.ReaderColorFilterDialog
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderSettingsSheet
 import eu.kanade.tachiyomi.ui.reader.setting.ReadingModeType
@@ -407,6 +408,30 @@ class ReaderActivity : BaseActivity() {
             )
         }
 
+        binding.dialogRoot.setComposeContent {
+            val state by viewModel.state.collectAsState()
+            val onDismissRequest = viewModel::closeDialog
+            when (state.dialog) {
+                is ReaderViewModel.Dialog.ColorFilter -> {
+                    setMenuVisibility(false)
+                    ReaderColorFilterDialog(
+                        onDismissRequest = {
+                            onDismissRequest()
+                            setMenuVisibility(true)
+                        },
+                        readerPreferences = viewModel.readerPreferences,
+                    )
+                }
+                is ReaderViewModel.Dialog.Page -> ReaderPageDialog(
+                    onDismissRequest = onDismissRequest,
+                    onSetAsCover = viewModel::setAsCover,
+                    onShare = viewModel::shareImage,
+                    onSave = viewModel::saveImage,
+                )
+                null -> {}
+            }
+        }
+
         // Init listeners on bottom menu
         binding.readerNav.setComposeContent {
             val state by viewModel.state.collectAsState()
@@ -534,11 +559,14 @@ class ReaderActivity : BaseActivity() {
                 if (readerSettingSheet?.isShowing == true) return@setOnClickListener
                 readerSettingSheet = ReaderSettingsSheet(this@ReaderActivity).apply { show() }
             }
+        }
 
-            setOnLongClickListener {
-                if (readerSettingSheet?.isShowing == true) return@setOnLongClickListener false
-                readerSettingSheet = ReaderSettingsSheet(this@ReaderActivity, showColorFilterSettings = true).apply { show() }
-                true
+        // Color filter sheet
+        with(binding.actionColorSettings) {
+            setTooltip(R.string.custom_filter)
+
+            setOnClickListener {
+                viewModel.openColorFilterDialog()
             }
         }
     }
@@ -786,7 +814,7 @@ class ReaderActivity : BaseActivity() {
      * actions to perform is shown.
      */
     fun onPageLongTap(page: ReaderPage) {
-        ReaderPageSheet(this, page).show()
+        viewModel.openPageDialog(page)
     }
 
     /**
@@ -824,14 +852,6 @@ class ReaderActivity : BaseActivity() {
     }
 
     /**
-     * Called from the page sheet. It delegates the call to the presenter to do some IO, which
-     * will call [onShareImageResult] with the path the image was saved on when it's ready.
-     */
-    fun shareImage(page: ReaderPage) {
-        viewModel.shareImage(page)
-    }
-
-    /**
      * Called from the presenter when a page is ready to be shared. It shows Android's default
      * sharing tool.
      */
@@ -847,14 +867,6 @@ class ReaderActivity : BaseActivity() {
     }
 
     /**
-     * Called from the page sheet. It delegates saving the image of the given [page] on external
-     * storage to the presenter.
-     */
-    fun saveImage(page: ReaderPage) {
-        viewModel.saveImage(page)
-    }
-
-    /**
      * Called from the presenter when a page is saved or fails. It shows a message or logs the
      * event depending on the [result].
      */
@@ -867,14 +879,6 @@ class ReaderActivity : BaseActivity() {
                 logcat(LogPriority.ERROR, result.error)
             }
         }
-    }
-
-    /**
-     * Called from the page sheet. It delegates setting the image of the given [page] as the
-     * cover to the presenter.
-     */
-    fun setAsCover(page: ReaderPage) {
-        viewModel.setAsCover(page)
     }
 
     /**
