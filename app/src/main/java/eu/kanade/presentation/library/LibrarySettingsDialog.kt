@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -25,7 +27,7 @@ import tachiyomi.domain.library.model.sort
 import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.presentation.core.components.CheckboxItem
 import tachiyomi.presentation.core.components.HeadingItem
-import tachiyomi.presentation.core.components.RadioItem
+import tachiyomi.presentation.core.components.SettingsChipRow
 import tachiyomi.presentation.core.components.SliderItem
 import tachiyomi.presentation.core.components.SortItem
 import tachiyomi.presentation.core.components.TriStateItem
@@ -167,23 +169,26 @@ private fun ColumnScope.SortPage(
     }
 }
 
+private val displayModes = listOf(
+    R.string.action_display_grid to LibraryDisplayMode.CompactGrid,
+    R.string.action_display_comfortable_grid to LibraryDisplayMode.ComfortableGrid,
+    R.string.action_display_cover_only_grid to LibraryDisplayMode.CoverOnlyGrid,
+    R.string.action_display_list to LibraryDisplayMode.List,
+)
+
 @Composable
 private fun ColumnScope.DisplayPage(
     screenModel: LibrarySettingsScreenModel,
 ) {
-    HeadingItem(R.string.action_display_mode)
     val displayMode by screenModel.libraryPreferences.libraryDisplayMode().collectAsState()
-    listOf(
-        R.string.action_display_grid to LibraryDisplayMode.CompactGrid,
-        R.string.action_display_comfortable_grid to LibraryDisplayMode.ComfortableGrid,
-        R.string.action_display_cover_only_grid to LibraryDisplayMode.CoverOnlyGrid,
-        R.string.action_display_list to LibraryDisplayMode.List,
-    ).map { (titleRes, mode) ->
-        RadioItem(
-            label = stringResource(titleRes),
-            selected = displayMode == mode,
-            onClick = { screenModel.setDisplayMode(mode) },
-        )
+    SettingsChipRow(R.string.action_display_mode) {
+        displayModes.map { (titleRes, mode) ->
+            FilterChip(
+                selected = displayMode == mode,
+                onClick = { screenModel.setDisplayMode(mode) },
+                label = { Text(stringResource(titleRes)) },
+            )
+        }
     }
 
     if (displayMode != LibraryDisplayMode.List) {
