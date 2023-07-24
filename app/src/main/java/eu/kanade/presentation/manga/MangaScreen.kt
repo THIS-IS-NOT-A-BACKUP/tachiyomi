@@ -57,12 +57,12 @@ import eu.kanade.presentation.manga.components.MangaBottomActionMenu
 import eu.kanade.presentation.manga.components.MangaChapterListItem
 import eu.kanade.presentation.manga.components.MangaInfoBox
 import eu.kanade.presentation.manga.components.MangaToolbar
+import eu.kanade.presentation.util.formatChapterNumber
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.download.model.Download
 import eu.kanade.tachiyomi.source.getNameForMangaInfo
 import eu.kanade.tachiyomi.ui.manga.ChapterItem
-import eu.kanade.tachiyomi.ui.manga.MangaScreenState
-import eu.kanade.tachiyomi.ui.manga.chapterDecimalFormat
+import eu.kanade.tachiyomi.ui.manga.MangaScreenModel
 import eu.kanade.tachiyomi.util.lang.toRelativeString
 import eu.kanade.tachiyomi.util.system.copyToClipboard
 import tachiyomi.domain.chapter.model.Chapter
@@ -82,7 +82,7 @@ import java.util.Date
 
 @Composable
 fun MangaScreen(
-    state: MangaScreenState.Success,
+    state: MangaScreenModel.State.Success,
     snackbarHostState: SnackbarHostState,
     dateRelativeTime: Int,
     dateFormat: DateFormat,
@@ -210,7 +210,7 @@ fun MangaScreen(
 
 @Composable
 private fun MangaScreenSmallImpl(
-    state: MangaScreenState.Success,
+    state: MangaScreenModel.State.Success,
     snackbarHostState: SnackbarHostState,
     dateRelativeTime: Int,
     dateFormat: DateFormat,
@@ -436,7 +436,7 @@ private fun MangaScreenSmallImpl(
 
 @Composable
 fun MangaScreenLargeImpl(
-    state: MangaScreenState.Success,
+    state: MangaScreenModel.State.Success,
     snackbarHostState: SnackbarHostState,
     dateRelativeTime: Int,
     dateFormat: DateFormat,
@@ -722,7 +722,7 @@ private fun LazyListScope.sharedChapterItems(
             title = if (manga.displayMode == Manga.CHAPTER_DISPLAY_NUMBER) {
                 stringResource(
                     R.string.display_mode_chapter,
-                    chapterDecimalFormat.format(chapterItem.chapter.chapterNumber.toDouble()),
+                    formatChapterNumber(chapterItem.chapter.chapterNumber),
                 )
             } else {
                 chapterItem.chapter.name

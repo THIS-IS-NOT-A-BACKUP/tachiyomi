@@ -71,16 +71,16 @@ class MangaScreen(
         val context = LocalContext.current
         val haptic = LocalHapticFeedback.current
         val scope = rememberCoroutineScope()
-        val screenModel = rememberScreenModel { MangaInfoScreenModel(context, mangaId, fromSource) }
+        val screenModel = rememberScreenModel { MangaScreenModel(context, mangaId, fromSource) }
 
         val state by screenModel.state.collectAsState()
 
-        if (state is MangaScreenState.Loading) {
+        if (state is MangaScreenModel.State.Loading) {
             LoadingScreen()
             return
         }
 
-        val successState = state as MangaScreenState.Success
+        val successState = state as MangaScreenModel.State.Success
         val isHttpSource = remember { successState.source is HttpSource }
 
         LaunchedEffect(successState.manga, screenModel.source) {
@@ -136,7 +136,7 @@ class MangaScreen(
         val onDismissRequest = { screenModel.dismissDialog() }
         when (val dialog = successState.dialog) {
             null -> {}
-            is MangaInfoScreenModel.Dialog.ChangeCategory -> {
+            is MangaScreenModel.Dialog.ChangeCategory -> {
                 ChangeCategoryDialog(
                     initialSelection = dialog.initialSelection,
                     onDismissRequest = onDismissRequest,
@@ -146,7 +146,7 @@ class MangaScreen(
                     },
                 )
             }
-            is MangaInfoScreenModel.Dialog.DeleteChapters -> {
+            is MangaScreenModel.Dialog.DeleteChapters -> {
                 DeleteChaptersDialog(
                     onDismissRequest = onDismissRequest,
                     onConfirm = {
@@ -155,12 +155,12 @@ class MangaScreen(
                     },
                 )
             }
-            is MangaInfoScreenModel.Dialog.DuplicateManga -> DuplicateMangaDialog(
+            is MangaScreenModel.Dialog.DuplicateManga -> DuplicateMangaDialog(
                 onDismissRequest = onDismissRequest,
                 onConfirm = { screenModel.toggleFavorite(onRemoved = {}, checkDuplicate = false) },
                 onOpenManga = { navigator.push(MangaScreen(dialog.duplicate.id)) },
             )
-            MangaInfoScreenModel.Dialog.SettingsSheet -> ChapterSettingsDialog(
+            MangaScreenModel.Dialog.SettingsSheet -> ChapterSettingsDialog(
                 onDismissRequest = onDismissRequest,
                 manga = successState.manga,
                 onDownloadFilterChanged = screenModel::setDownloadedFilter,
@@ -170,7 +170,7 @@ class MangaScreen(
                 onDisplayModeChanged = screenModel::setDisplayMode,
                 onSetAsDefault = screenModel::setCurrentSettingsAsDefault,
             )
-            MangaInfoScreenModel.Dialog.TrackSheet -> {
+            MangaScreenModel.Dialog.TrackSheet -> {
                 NavigatorAdaptiveSheet(
                     screen = TrackInfoDialogHomeScreen(
                         mangaId = successState.manga.id,
@@ -181,7 +181,7 @@ class MangaScreen(
                     onDismissRequest = onDismissRequest,
                 )
             }
-            MangaInfoScreenModel.Dialog.FullCover -> {
+            MangaScreenModel.Dialog.FullCover -> {
                 val sm = rememberScreenModel { MangaCoverScreenModel(successState.manga.id) }
                 val manga by sm.state.collectAsState()
                 if (manga != null) {
