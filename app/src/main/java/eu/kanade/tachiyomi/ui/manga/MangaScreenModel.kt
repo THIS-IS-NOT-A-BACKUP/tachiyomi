@@ -69,6 +69,7 @@ import tachiyomi.domain.manga.interactor.GetMangaWithChapters
 import tachiyomi.domain.manga.interactor.SetMangaChapterFlags
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.applyFilter
+import tachiyomi.domain.manga.repository.MangaRepository
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.track.interactor.GetTracks
 import tachiyomi.source.local.isLocal
@@ -97,6 +98,7 @@ class MangaScreenModel(
     private val getCategories: GetCategories = Injekt.get(),
     private val getTracks: GetTracks = Injekt.get(),
     private val setMangaCategories: SetMangaCategories = Injekt.get(),
+    private val mangaRepository: MangaRepository = Injekt.get(),
     val snackbarHostState: SnackbarHostState = SnackbarHostState(),
 ) : StateScreenModel<MangaScreenModel.State>(State.Loading) {
 
@@ -123,9 +125,12 @@ class MangaScreenModel(
     val chapterSwipeStartAction = libraryPreferences.swipeToEndAction().get()
     val chapterSwipeEndAction = libraryPreferences.swipeToStartAction().get()
 
-    val relativeTime by uiPreferences.relativeTime().asState(coroutineScope)
     val dateFormat by mutableStateOf(UiPreferences.dateFormat(uiPreferences.dateFormat().get()))
     private val skipFiltered by readerPreferences.skipFiltered().asState(coroutineScope)
+
+    val isUpdateIntervalEnabled = LibraryPreferences.MANGA_OUTSIDE_RELEASE_PERIOD in libraryPreferences.libraryUpdateMangaRestriction().get()
+    val leadDay = libraryPreferences.leadingExpectedDays().get()
+    val followDay = libraryPreferences.followingExpectedDays().get()
 
     private val selectedPositions: Array<Int> = arrayOf(-1, -1) // first and last selected index in list
     private val selectedChapterIds: HashSet<Long> = HashSet()
@@ -279,7 +284,7 @@ class MangaScreenModel(
                 // Add to library
                 // First, check if duplicate exists if callback is provided
                 if (checkDuplicate) {
-                    val duplicate = getDuplicateLibraryManga.await(manga.title)
+                    val duplicate = getDuplicateLibraryManga.await(manga).getOrNull(0)
 
                     if (duplicate != null) {
                         updateSuccessState { it.copy(dialog = Dialog.DuplicateManga(manga, duplicate)) }
@@ -307,7 +312,7 @@ class MangaScreenModel(
                     }
 
                     // Choose a category
-                    else -> promptChangeCategories()
+                    else -> showChangeCategoryDialog()
                 }
 
                 // Finally match with enhanced tracking when available
@@ -333,7 +338,7 @@ class MangaScreenModel(
         }
     }
 
-    fun promptChangeCategories() {
+    fun showChangeCategoryDialog() {
         val manga = successState?.manga ?: return
         coroutineScope.launch {
             val categories = getCategories()
@@ -346,6 +351,30 @@ class MangaScreenModel(
                     ),
                 )
             }
+        }
+    }
+
+    fun showSetFetchIntervalDialog() {
+        val manga = successState?.manga ?: return
+        updateSuccessState {
+            it.copy(dialog = Dialog.SetFetchInterval(manga))
+        }
+    }
+
+    fun setFetchInterval(manga: Manga, newInterval: Int) {
+        val interval = when (newInterval) {
+            // reset interval 0 default to trigger recalculation
+            // only reset if interval is custom, which is negative
+            0 -> if (manga.fetchInterval < 0) 0 else manga.fetchInterval
+            else -> -newInterval
+        }
+        coroutineScope.launchIO {
+            updateManga.awaitUpdateFetchInterval(
+                manga.copy(fetchInterval = interval),
+                successState?.chapters?.map { it.chapter }.orEmpty(),
+            )
+            val newManga = mangaRepository.getMangaById(mangaId)
+            updateSuccessState { it.copy(manga = newManga) }
         }
     }
 
@@ -502,6 +531,7 @@ class MangaScreenModel(
                     chapters,
                     state.manga,
                     state.source,
+                    manualFetch,
                 )
 
                 if (manualFetch) {
@@ -519,6 +549,8 @@ class MangaScreenModel(
             coroutineScope.launch {
                 snackbarHostState.showSnackbar(message = message)
             }
+            val newManga = mangaRepository.getMangaById(mangaId)
+            updateSuccessState { it.copy(manga = newManga, isRefreshingData = false) }
         }
     }
 
@@ -943,6 +975,7 @@ class MangaScreenModel(
         data class ChangeCategory(val manga: Manga, val initialSelection: List<CheckboxState<Category>>) : Dialog
         data class DeleteChapters(val chapters: List<Chapter>) : Dialog
         data class DuplicateManga(val manga: Manga, val duplicate: Manga) : Dialog
+        data class SetFetchInterval(val manga: Manga) : Dialog
         data object SettingsSheet : Dialog
         data object TrackSheet : Dialog
         data object FullCover : Dialog
@@ -970,7 +1003,7 @@ class MangaScreenModel(
 
     sealed interface State {
         @Immutable
-        object Loading : State
+        data object Loading : State
 
         @Immutable
         data class Success(
@@ -1022,3 +1055,10 @@ data class ChapterItem(
 ) {
     val isDownloaded = downloadState == Download.State.DOWNLOADED
 }
+
+@Immutable
+data class FetchInterval(
+    val interval: Int,
+    val leadDays: Int,
+    val followDays: Int,
+)

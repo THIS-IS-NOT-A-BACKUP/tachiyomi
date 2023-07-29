@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.AttachMoney
 import androidx.compose.material.icons.outlined.Block
@@ -77,6 +78,7 @@ import coil.compose.AsyncImage
 import eu.kanade.presentation.components.DropdownMenu
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.source.model.SManga
+import eu.kanade.tachiyomi.ui.manga.FetchInterval
 import eu.kanade.tachiyomi.util.system.copyToClipboard
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.presentation.core.components.material.TextButton
@@ -164,14 +166,18 @@ fun MangaActionRow(
     modifier: Modifier = Modifier,
     favorite: Boolean,
     trackingCount: Int,
+    fetchInterval: FetchInterval?,
+    isUserIntervalMode: Boolean,
     onAddToLibraryClicked: () -> Unit,
     onWebViewClicked: (() -> Unit)?,
     onWebViewLongClicked: (() -> Unit)?,
     onTrackingClicked: (() -> Unit)?,
+    onEditIntervalClicked: (() -> Unit)?,
     onEditCategory: (() -> Unit)?,
 ) {
+    val defaultActionButtonColor = MaterialTheme.colorScheme.onSurface.copy(alpha = .38f)
+
     Row(modifier = modifier.padding(start = 16.dp, top = 8.dp, end = 16.dp)) {
-        val defaultActionButtonColor = MaterialTheme.colorScheme.onSurface.copy(alpha = .38f)
         MangaActionButton(
             title = if (favorite) {
                 stringResource(R.string.in_library)
@@ -183,6 +189,20 @@ fun MangaActionRow(
             onClick = onAddToLibraryClicked,
             onLongClick = onEditCategory,
         )
+        if (onEditIntervalClicked != null && fetchInterval != null) {
+            val intervalPair = 1.coerceAtLeast(fetchInterval.interval - fetchInterval.leadDays) to (fetchInterval.interval + fetchInterval.followDays)
+            MangaActionButton(
+                title =
+                if (intervalPair.first == intervalPair.second) {
+                    pluralStringResource(id = R.plurals.day, count = intervalPair.second, intervalPair.second)
+                } else {
+                    pluralStringResource(id = R.plurals.range_interval_day, count = intervalPair.second, intervalPair.first, intervalPair.second)
+                },
+                icon = Icons.Default.HourglassEmpty,
+                color = if (isUserIntervalMode) MaterialTheme.colorScheme.primary else defaultActionButtonColor,
+                onClick = onEditIntervalClicked,
+            )
+        }
         if (onTrackingClicked != null) {
             MangaActionButton(
                 title = if (trackingCount == 0) {

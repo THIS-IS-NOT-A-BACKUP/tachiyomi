@@ -48,9 +48,9 @@ class MangaRepositoryImpl(
         return handler.subscribeToList { mangasQueries.getFavoriteBySourceId(sourceId, mangaMapper) }
     }
 
-    override suspend fun getDuplicateLibraryManga(title: String): Manga? {
-        return handler.awaitOneOrNull {
-            mangasQueries.getDuplicateLibraryManga(title, mangaMapper)
+    override suspend fun getDuplicateLibraryManga(id: Long, title: String): List<Manga> {
+        return handler.awaitList {
+            mangasQueries.getDuplicateLibraryManga(title, id, mangaMapper)
         }
     }
 
@@ -88,7 +88,7 @@ class MangaRepositoryImpl(
                 favorite = manga.favorite,
                 lastUpdate = manga.lastUpdate,
                 nextUpdate = manga.nextUpdate,
-                calculateInterval = manga.calculateInterval.toLong(),
+                calculateInterval = manga.fetchInterval.toLong(),
                 initialized = manga.initialized,
                 viewerFlags = manga.viewerFlags,
                 chapterFlags = manga.chapterFlags,
@@ -136,7 +136,7 @@ class MangaRepositoryImpl(
                     favorite = value.favorite?.toLong(),
                     lastUpdate = value.lastUpdate,
                     nextUpdate = value.nextUpdate,
-                    calculateInterval = value.calculateInterval?.toLong(),
+                    calculateInterval = value.fetchInterval?.toLong(),
                     initialized = value.initialized?.toLong(),
                     viewer = value.viewerFlags,
                     chapterFlags = value.chapterFlags,
