@@ -5,7 +5,7 @@ import androidx.annotation.CallSuper
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import eu.kanade.domain.chapter.interactor.SyncChaptersWithTrackServiceTwoWay
+import eu.kanade.domain.chapter.interactor.SyncChapterProgressWithTrack
 import eu.kanade.domain.track.model.toDbTrack
 import eu.kanade.domain.track.model.toDomainTrack
 import eu.kanade.domain.track.service.TrackPreferences
@@ -28,18 +28,15 @@ import uy.kohesive.injekt.injectLazy
 import java.time.ZoneOffset
 import tachiyomi.domain.track.model.Track as DomainTrack
 
-abstract class TrackService(val id: Long) {
+abstract class TrackService(val id: Long, val name: String) {
 
     val trackPreferences: TrackPreferences by injectLazy()
     val networkService: NetworkHelper by injectLazy()
     private val insertTrack: InsertTrack by injectLazy()
+    private val syncChapterProgressWithTrack: SyncChapterProgressWithTrack by injectLazy()
 
     open val client: OkHttpClient
         get() = networkService.client
-
-    // Name of the manga sync service to display
-    @StringRes
-    abstract fun nameRes(): Int
 
     // Application and remote support for reading dates
     open val supportsReadingDates: Boolean = false
@@ -89,7 +86,7 @@ abstract class TrackService(val id: Long) {
         trackPreferences.setTrackCredentials(this, "", "")
     }
 
-    open val isLogged: Boolean
+    open val isLoggedIn: Boolean
         get() = getUsername().isNotEmpty() &&
             getPassword().isNotEmpty()
 
@@ -101,7 +98,8 @@ abstract class TrackService(val id: Long) {
         trackPreferences.setTrackCredentials(this, username, password)
     }
 
-    suspend fun registerTracking(item: Track, mangaId: Long) {
+    // TODO: move this to an interactor, and update all trackers based on common data
+    suspend fun register(item: Track, mangaId: Long) {
         item.manga_id = mangaId
         try {
             withIOContext {
@@ -113,6 +111,7 @@ abstract class TrackService(val id: Long) {
 
                 insertTrack.await(track)
 
+                // TODO: merge into SyncChaptersWithTrackServiceTwoWay?
                 // Update chapter progress if newer chapters marked read locally
                 if (hasReadChapters) {
                     val latestLocalReadChapterNumber = allChapters
@@ -144,9 +143,7 @@ abstract class TrackService(val id: Long) {
                     }
                 }
 
-                if (this is EnhancedTrackService) {
-                    Injekt.get<SyncChaptersWithTrackServiceTwoWay>().await(allChapters, track, this@TrackService)
-                }
+                syncChapterProgressWithTrack.await(mangaId, track, this@TrackService)
             }
         } catch (e: Throwable) {
             withUIContext { Injekt.get<Application>().toast(e.message) }

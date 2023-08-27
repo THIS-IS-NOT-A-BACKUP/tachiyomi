@@ -105,7 +105,7 @@ class MangaScreenModel(
     private val successState: State.Success?
         get() = state.value as? State.Success
 
-    private val loggedServices by lazy { trackManager.services.filter { it.isLogged } }
+    private val loggedServices by lazy { trackManager.services.filter { it.isLoggedIn } }
 
     val manga: Manga?
         get() = successState?.manga
@@ -323,7 +323,7 @@ class MangaScreenModel(
                         launchIO {
                             try {
                                 service.match(manga)?.let { track ->
-                                    (service as TrackService).registerTracking(track, mangaId)
+                                    (service as TrackService).register(track, mangaId)
                                 }
                             } catch (e: Exception) {
                                 logcat(LogPriority.WARN, e) {
