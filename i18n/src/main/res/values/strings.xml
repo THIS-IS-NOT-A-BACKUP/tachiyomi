@@ -493,6 +493,7 @@
     </plurals>
     <string name="backup_in_progress">Backup is already in progress</string>
     <string name="backup_choice">What do you want to backup?</string>
+    <string name="app_settings">App settings</string>
     <string name="creating_backup">Creating backup</string>
     <string name="creating_backup_error">Backup failed</string>
     <string name="missing_storage_permission">Storage permissions not granted</string>
@@ -503,7 +504,7 @@
     <string name="restoring_backup">Restoring backup</string>
     <string name="restoring_backup_error">Restoring backup failed</string>
     <string name="restoring_backup_canceled">Canceled restore</string>
-    <string name="backup_info">You should keep copies of backups in other places as well.</string>
+    <string name="backup_info">You should keep copies of backups in other places as well. Backups may contain sensitive data including any stored passwords; be careful if sharing.</string>
 
     <!-- Sync section -->
     <string name="syncing_library">Syncing library</string>
