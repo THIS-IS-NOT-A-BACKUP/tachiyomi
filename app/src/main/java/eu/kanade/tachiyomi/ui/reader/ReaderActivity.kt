@@ -42,6 +42,7 @@ import com.google.android.material.elevation.SurfaceColors
 import com.google.android.material.transition.platform.MaterialContainerTransform
 import dev.chrisbanes.insetter.applyInsetter
 import eu.kanade.domain.base.BasePreferences
+import eu.kanade.presentation.reader.BrightnessOverlay
 import eu.kanade.presentation.reader.OrientationModeSelectDialog
 import eu.kanade.presentation.reader.PageIndicatorText
 import eu.kanade.presentation.reader.ReaderPageActionsDialog
@@ -91,7 +92,6 @@ import tachiyomi.domain.manga.model.Manga
 import tachiyomi.presentation.core.util.collectAsState
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
-import kotlin.math.abs
 
 class ReaderActivity : BaseActivity() {
 
@@ -298,12 +298,6 @@ class ReaderActivity : BaseActivity() {
      * Initializes the reader menu. It sets up click listeners and the initial visibility.
      */
     private fun initializeMenu() {
-        binding.dialogRoot.applyInsetter {
-            type(navigationBars = true) {
-                margin(vertical = true, horizontal = true)
-            }
-        }
-
         binding.pageNumber.setComposeContent {
             val state by viewModel.state.collectAsState()
             val showPageNumber by viewModel.readerPreferences.showPageNumber().collectAsState()
@@ -375,6 +369,10 @@ class ReaderActivity : BaseActivity() {
                     menuToggleToast = toast(if (enabled) R.string.on else R.string.off)
                 },
                 onClickSettings = viewModel::openSettingsDialog,
+            )
+
+            BrightnessOverlay(
+                value = state.brightnessOverlayValue,
             )
 
             val onDismissRequest = viewModel::closeDialog
@@ -903,17 +901,9 @@ class ReaderActivity : BaseActivity() {
                 }
                 else -> WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
             }
-
             window.attributes = window.attributes.apply { screenBrightness = readerBrightness }
 
-            // Set black overlay visibility.
-            if (value < 0) {
-                binding.brightnessOverlay.isVisible = true
-                val alpha = (abs(value) * 2.56).toInt()
-                binding.brightnessOverlay.setBackgroundColor(Color.argb(alpha, 0, 0, 0))
-            } else {
-                binding.brightnessOverlay.isVisible = false
-            }
+            viewModel.setBrightnessOverlayValue(value)
         }
 
         /**
