@@ -14,6 +14,7 @@
     <string name="track">Tracking</string>
     <string name="delete_downloaded">Delete downloaded</string>
     <string name="history">History</string>
+    <string name="scanlator">Scanlator</string>
 
     <!-- Screen titles -->
     <string name="label_more">More</string>
@@ -66,6 +67,7 @@
     <string name="action_sort_latest_chapter">Latest chapter</string>
     <string name="action_sort_chapter_fetch_date">Chapter fetch date</string>
     <string name="action_sort_date_added">Date added</string>
+    <string name="action_sort_tracker_score">Tracker score</string>
     <string name="action_search">Search</string>
     <string name="action_search_hint">Search…</string>
     <string name="action_search_settings">Search settings</string>
@@ -126,6 +128,7 @@
     <string name="action_disable">Disable</string>
     <string name="action_pin">Pin</string>
     <string name="action_unpin">Unpin</string>
+    <string name="action_apply">Apply</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_ok">OK</string>
     <string name="action_cancel_all">Cancel all</string>
@@ -145,6 +148,7 @@
     <string name="action_share">Share</string>
     <string name="action_save">Save</string>
     <string name="action_reset">Reset</string>
+    <string name="action_revert_to_default">Revert to default</string>
     <!-- missing undo feature after Compose rewrite #7454 -->
     <string name="action_undo">Undo</string>
     <string name="action_close">Close</string>
@@ -366,6 +370,8 @@
     <string name="tapping_inverted_both">Both</string>
     <string name="pref_reader_actions">Actions</string>
     <string name="pref_read_with_long_tap">Show actions on long tap</string>
+    <string name="pref_create_folder_per_manga">Save pages into separate folders</string>
+    <string name="pref_create_folder_per_manga_summary">Creates folders according to entries\' title</string>
     <string name="pref_reader_theme">Background color</string>
     <string name="white_background">White</string>
     <string name="gray_background">Gray</string>
@@ -699,6 +705,8 @@
     <string name="set_chapter_settings_as_default">Set as default</string>
     <string name="no_chapters_error">No chapters found</string>
     <string name="are_you_sure">Are you sure?</string>
+    <string name="exclude_scanlators">Exclude scanlators</string>
+    <string name="no_scanlators_found">No scanlators found</string>
 
     <!-- Tracking Screen -->
     <string name="manga_tracking_tab">Tracking</string>

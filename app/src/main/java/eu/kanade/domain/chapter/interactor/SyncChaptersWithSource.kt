@@ -2,6 +2,7 @@ package eu.kanade.domain.chapter.interactor
 
 import eu.kanade.domain.chapter.model.copyFromSChapter
 import eu.kanade.domain.chapter.model.toSChapter
+import eu.kanade.domain.manga.interactor.GetExcludedScanlators
 import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.domain.manga.model.toSManga
 import eu.kanade.tachiyomi.data.download.DownloadManager
@@ -33,6 +34,7 @@ class SyncChaptersWithSource(
     private val updateManga: UpdateManga,
     private val updateChapter: UpdateChapter,
     private val getChaptersByMangaId: GetChaptersByMangaId,
+    private val getExcludedScanlators: GetExcludedScanlators,
 ) {
 
     /**
@@ -116,7 +118,9 @@ class SyncChaptersWithSource(
             } else {
                 if (shouldUpdateDbChapter.await(dbChapter, chapter)) {
                     val shouldRenameChapter = downloadProvider.isChapterDirNameChanged(dbChapter, chapter) &&
-                        downloadManager.isChapterDownloaded(dbChapter.name, dbChapter.scanlator, manga.title, manga.source)
+                        downloadManager.isChapterDownloaded(
+                            dbChapter.name, dbChapter.scanlator, manga.title, manga.source,
+                        )
 
                     if (shouldRenameChapter) {
                         downloadManager.renameChapter(source, manga, dbChapter, chapter)
@@ -206,6 +210,10 @@ class SyncChaptersWithSource(
 
         val reAddedUrls = reAdded.map { it.url }.toHashSet()
 
-        return updatedToAdd.filterNot { it.url in reAddedUrls }
+        val excludedScanlators = getExcludedScanlators.await(manga.id).toHashSet()
+
+        return updatedToAdd.filterNot {
+            it.url in reAddedUrls || it.scanlator in excludedScanlators
+        }
     }
 }

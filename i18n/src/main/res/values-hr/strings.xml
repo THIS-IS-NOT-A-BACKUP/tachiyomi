@@ -544,6 +544,8 @@
     <string name="notification_incognito_text">Deaktiviraj anonimni modus</string>
     <string name="rotation_type">Okretanje</string>
     <string name="automatic_background">Automatski</string>
+    <string name="pref_create_folder_per_manga_summary">Stvara mape prema naslovu unosa</string>
+    <string name="pref_create_folder_per_manga">Spremi stranice u zasebne mape</string>
     <string name="pref_reader_actions">Radnje</string>
     <string name="cancel_all_for_series">Prekini sve za ovu seriju</string>
     <string name="chapter_not_found">Poglavlje nije pronađeno</string>
@@ -834,4 +836,8 @@
     <string name="source_settings">Postavke izvora</string>
     <string name="app_settings">Postavke aplikacije</string>
     <string name="label_data_storage">Podaci i spremište</string>
+    <string name="relative_time_span_never">Nikada</string>
+    <string name="pref_flash_page_summ">Smanjuje artefakte na ekranima s e-tintom</string>
+    <string name="last_auto_backup_info">Zadnja automatska sigurnosna kopija: %s</string>
+    <string name="pref_flash_page">Zabljesni prilikom mijenjanja stranice</string>
 </resources>

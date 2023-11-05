@@ -23,9 +23,10 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.AppBarActions
+import eu.kanade.presentation.reader.components.ChapterNavigator
 import eu.kanade.tachiyomi.R
-import eu.kanade.tachiyomi.ui.reader.setting.OrientationType
-import eu.kanade.tachiyomi.ui.reader.setting.ReadingModeType
+import eu.kanade.tachiyomi.ui.reader.setting.ReaderOrientation
+import eu.kanade.tachiyomi.ui.reader.setting.ReadingMode
 import eu.kanade.tachiyomi.ui.reader.viewer.Viewer
 import eu.kanade.tachiyomi.ui.reader.viewer.pager.R2LPagerViewer
 
@@ -54,10 +55,10 @@ fun ReaderAppBars(
     totalPages: Int,
     onSliderValueChange: (Int) -> Unit,
 
-    readingMode: ReadingModeType,
+    readingMode: ReadingMode,
     onClickReadingMode: () -> Unit,
-    orientationMode: OrientationType,
-    onClickOrientationMode: () -> Unit,
+    orientation: ReaderOrientation,
+    onClickOrientation: () -> Unit,
     cropEnabled: Boolean,
     onClickCropBorder: () -> Unit,
     onClickSettings: () -> Unit,
@@ -99,7 +100,9 @@ fun ReaderAppBars(
                     AppBarActions(
                         listOfNotNull(
                             AppBar.Action(
-                                title = stringResource(if (bookmarked) R.string.action_remove_bookmark else R.string.action_bookmark),
+                                title = stringResource(
+                                    if (bookmarked) R.string.action_remove_bookmark else R.string.action_bookmark,
+                                ),
                                 icon = if (bookmarked) Icons.Outlined.Bookmark else Icons.Outlined.BookmarkBorder,
                                 onClick = onToggleBookmarked,
                             ),
@@ -153,8 +156,8 @@ fun ReaderAppBars(
                     backgroundColor = backgroundColor,
                     readingMode = readingMode,
                     onClickReadingMode = onClickReadingMode,
-                    orientationMode = orientationMode,
-                    onClickOrientationMode = onClickOrientationMode,
+                    orientation = orientation,
+                    onClickOrientation = onClickOrientation,
                     cropEnabled = cropEnabled,
                     onClickCropBorder = onClickCropBorder,
                     onClickSettings = onClickSettings,

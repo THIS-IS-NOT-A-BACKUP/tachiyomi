@@ -12,7 +12,7 @@ import eu.kanade.tachiyomi.data.library.LibraryUpdateJob
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.network.NetworkPreferences
 import eu.kanade.tachiyomi.network.PREF_DOH_CLOUDFLARE
-import eu.kanade.tachiyomi.ui.reader.setting.OrientationType
+import eu.kanade.tachiyomi.ui.reader.setting.ReaderOrientation
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.util.system.DeviceUtil
 import eu.kanade.tachiyomi.util.system.toast
@@ -121,13 +121,22 @@ object Migrations {
                     }
                 }
                 prefs.edit {
-                    putInt(libraryPreferences.filterDownloaded().key(), convertBooleanPrefToTriState("pref_filter_downloaded_key"))
+                    putInt(
+                        libraryPreferences.filterDownloaded().key(),
+                        convertBooleanPrefToTriState("pref_filter_downloaded_key"),
+                    )
                     remove("pref_filter_downloaded_key")
 
-                    putInt(libraryPreferences.filterUnread().key(), convertBooleanPrefToTriState("pref_filter_unread_key"))
+                    putInt(
+                        libraryPreferences.filterUnread().key(),
+                        convertBooleanPrefToTriState("pref_filter_unread_key"),
+                    )
                     remove("pref_filter_unread_key")
 
-                    putInt(libraryPreferences.filterCompleted().key(), convertBooleanPrefToTriState("pref_filter_completed_key"))
+                    putInt(
+                        libraryPreferences.filterCompleted().key(),
+                        convertBooleanPrefToTriState("pref_filter_completed_key"),
+                    )
                     remove("pref_filter_completed_key")
                 }
             }
@@ -161,12 +170,12 @@ object Migrations {
             if (oldVersion < 60) {
                 // Migrate Rotation and Viewer values to default values for viewer_flags
                 val newOrientation = when (prefs.getInt("pref_rotation_type_key", 1)) {
-                    1 -> OrientationType.FREE.flagValue
-                    2 -> OrientationType.PORTRAIT.flagValue
-                    3 -> OrientationType.LANDSCAPE.flagValue
-                    4 -> OrientationType.LOCKED_PORTRAIT.flagValue
-                    5 -> OrientationType.LOCKED_LANDSCAPE.flagValue
-                    else -> OrientationType.FREE.flagValue
+                    1 -> ReaderOrientation.FREE.flagValue
+                    2 -> ReaderOrientation.PORTRAIT.flagValue
+                    3 -> ReaderOrientation.LANDSCAPE.flagValue
+                    4 -> ReaderOrientation.LOCKED_PORTRAIT.flagValue
+                    5 -> ReaderOrientation.LOCKED_LANDSCAPE.flagValue
+                    else -> ReaderOrientation.FREE.flagValue
                 }
 
                 // Reading mode flag and prefValue is the same value
@@ -242,7 +251,10 @@ object Migrations {
                 if (oldSecureScreen) {
                     securityPreferences.secureScreen().set(SecurityPreferences.SecureScreenMode.ALWAYS)
                 }
-                if (DeviceUtil.isMiui && basePreferences.extensionInstaller().get() == BasePreferences.ExtensionInstaller.PACKAGEINSTALLER) {
+                if (
+                    DeviceUtil.isMiui &&
+                    basePreferences.extensionInstaller().get() == BasePreferences.ExtensionInstaller.PACKAGEINSTALLER
+                ) {
                     basePreferences.extensionInstaller().set(BasePreferences.ExtensionInstaller.LEGACY)
                 }
             }
@@ -259,7 +271,12 @@ object Migrations {
             if (oldVersion < 81) {
                 // Handle renamed enum values
                 prefs.edit {
-                    val newSortingMode = when (val oldSortingMode = prefs.getString(libraryPreferences.sortingMode().key(), "ALPHABETICAL")) {
+                    val newSortingMode = when (
+                        val oldSortingMode = prefs.getString(
+                            libraryPreferences.sortingMode().key(),
+                            "ALPHABETICAL",
+                        )
+                    ) {
                         "LAST_CHECKED" -> "LAST_MANGA_UPDATE"
                         "UNREAD" -> "UNREAD_COUNT"
                         "DATE_FETCHED" -> "CHAPTER_FETCH_DATE"
