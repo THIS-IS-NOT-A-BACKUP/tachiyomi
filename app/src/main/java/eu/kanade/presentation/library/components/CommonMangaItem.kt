@@ -33,14 +33,14 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import eu.kanade.presentation.manga.components.MangaCover
-import eu.kanade.tachiyomi.R
+import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.BadgeGroup
+import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.util.selectedBackground
 
 object CommonMangaItemDefaults {
@@ -50,7 +50,7 @@ object CommonMangaItemDefaults {
     const val BrowseFavoriteCoverAlpha = 0.34f
 }
 
-private val ContinueReadingButtonSize = 32.dp
+private val ContinueReadingButtonSize = 28.dp
 private val ContinueReadingButtonGridPadding = 6.dp
 private val ContinueReadingButtonListSpacing = 8.dp
 
@@ -378,7 +378,7 @@ private fun ContinueReadingButton(
         ) {
             Icon(
                 imageVector = Icons.Filled.PlayArrow,
-                contentDescription = stringResource(R.string.action_resume),
+                contentDescription = stringResource(MR.strings.action_resume),
                 modifier = Modifier.size(16.dp),
             )
         }

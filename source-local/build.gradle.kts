@@ -9,6 +9,8 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(project(":source-api"))
+                api(project(":i18n"))
+
                 implementation(libs.unifile)
                 implementation(libs.junrar)
             }
@@ -39,6 +41,7 @@ android {
 tasks {
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         kotlinOptions.freeCompilerArgs += listOf(
+            "-Xexpect-actual-classes",
             "-opt-in=kotlinx.serialization.ExperimentalSerializationApi",
         )
     }
