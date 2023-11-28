@@ -46,7 +46,7 @@ fun Context.copyToClipboard(label: String, content: String) {
 
         // Android 13 and higher shows a visual confirmation of copied contents
         // https://developer.android.com/about/versions/13/features/copy-paste
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2 || DeviceUtil.isSamsung) {
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
             toast(stringResource(MR.strings.copied_to_clipboard, content.truncateCenter(50)))
         }
     } catch (e: Throwable) {
@@ -165,7 +165,7 @@ fun Context.createReaderThemeContext(): Context {
  * @return document size of [uri] or null if size can't be obtained
  */
 fun Context.getUriSize(uri: Uri): Long? {
-    return UniFile.fromUri(this, uri).length().takeIf { it >= 0 }
+    return UniFile.fromUri(this, uri)?.length()?.takeIf { it >= 0 }
 }
 
 /**
