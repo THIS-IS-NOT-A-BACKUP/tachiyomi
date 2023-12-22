@@ -4,7 +4,6 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -28,6 +27,7 @@ import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import eu.kanade.presentation.components.AppBar
+import eu.kanade.presentation.components.WarningBanner
 import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.data.backup.create.BackupCreateFlags
 import eu.kanade.tachiyomi.data.backup.create.BackupCreateJob
@@ -83,16 +83,21 @@ class CreateBackupScreen : Screen() {
                     .fillMaxSize(),
             ) {
                 LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = MaterialTheme.padding.medium),
+                    modifier = Modifier.weight(1f),
                 ) {
+                    if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
+                        item {
+                            WarningBanner(MR.strings.restore_miui_warning)
+                        }
+                    }
+
                     item {
                         LabeledCheckbox(
                             label = stringResource(MR.strings.manga),
                             checked = true,
                             onCheckedChange = {},
                             enabled = false,
+                            modifier = Modifier.padding(horizontal = MaterialTheme.padding.medium),
                         )
                     }
                     BackupChoices.forEach { (k, v) ->
@@ -103,6 +108,7 @@ class CreateBackupScreen : Screen() {
                                 onCheckedChange = {
                                     model.toggleFlag(k)
                                 },
+                                modifier = Modifier.padding(horizontal = MaterialTheme.padding.medium),
                             )
                         }
                     }
@@ -116,9 +122,6 @@ class CreateBackupScreen : Screen() {
                         .fillMaxWidth(),
                     onClick = {
                         if (!BackupCreateJob.isManualJobRunning(context)) {
-                            if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
-                                context.toast(MR.strings.restore_miui_warning, Toast.LENGTH_LONG)
-                            }
                             try {
                                 chooseBackupDir.launch(Backup.getFilename())
                             } catch (e: ActivityNotFoundException) {
