@@ -31,13 +31,13 @@ import eu.kanade.presentation.components.WarningBanner
 import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.data.backup.create.BackupCreateFlags
 import eu.kanade.tachiyomi.data.backup.create.BackupCreateJob
-import eu.kanade.tachiyomi.data.backup.models.Backup
+import eu.kanade.tachiyomi.data.backup.create.BackupCreator
 import eu.kanade.tachiyomi.util.system.DeviceUtil
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.minus
+import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.plus
-import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.coroutines.flow.update
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.LabeledCheckbox
@@ -123,7 +123,7 @@ class CreateBackupScreen : Screen() {
                     onClick = {
                         if (!BackupCreateJob.isManualJobRunning(context)) {
                             try {
-                                chooseBackupDir.launch(Backup.getFilename())
+                                chooseBackupDir.launch(BackupCreator.getFilename())
                             } catch (e: ActivityNotFoundException) {
                                 context.toast(MR.strings.file_picker_error)
                             }
@@ -161,7 +161,12 @@ private class CreateBackupScreenModel : StateScreenModel<CreateBackupScreenModel
 
     @Immutable
     data class State(
-        val flags: PersistentSet<Int> = BackupChoices.keys.toPersistentSet(),
+        val flags: PersistentSet<Int> = persistentSetOf(
+            BackupCreateFlags.BACKUP_CATEGORY,
+            BackupCreateFlags.BACKUP_CHAPTER,
+            BackupCreateFlags.BACKUP_TRACK,
+            BackupCreateFlags.BACKUP_HISTORY,
+        ),
     )
 }
 

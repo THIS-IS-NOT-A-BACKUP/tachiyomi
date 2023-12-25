@@ -1,13 +1,13 @@
-package eu.kanade.tachiyomi.data.backup.restore
+package eu.kanade.tachiyomi.data.backup.restore.restorers
 
 import eu.kanade.domain.manga.interactor.UpdateManga
-import eu.kanade.tachiyomi.data.backup.models.BackupCategory
-import eu.kanade.tachiyomi.data.backup.models.BackupChapter
-import eu.kanade.tachiyomi.data.backup.models.BackupHistory
-import eu.kanade.tachiyomi.data.backup.models.BackupManga
-import eu.kanade.tachiyomi.data.backup.models.BackupTracking
 import tachiyomi.data.DatabaseHandler
 import tachiyomi.data.UpdateStrategyColumnAdapter
+import tachiyomi.domain.backup.model.BackupCategory
+import tachiyomi.domain.backup.model.BackupChapter
+import tachiyomi.domain.backup.model.BackupHistory
+import tachiyomi.domain.backup.model.BackupManga
+import tachiyomi.domain.backup.model.BackupTracking
 import tachiyomi.domain.category.interactor.GetCategories
 import tachiyomi.domain.chapter.interactor.GetChaptersByMangaId
 import tachiyomi.domain.chapter.model.Chapter
@@ -346,12 +346,12 @@ class MangaRestorer(
     }
 
     private suspend fun restoreTracking(manga: Manga, backupTracks: List<BackupTracking>) {
-        val dbTrackBySyncId = getTracks.await(manga.id).associateBy { it.syncId }
+        val dbTrackByTrackerId = getTracks.await(manga.id).associateBy { it.trackerId }
 
         val (existingTracks, newTracks) = backupTracks
             .mapNotNull {
                 val track = it.getTrackImpl()
-                val dbTrack = dbTrackBySyncId[track.syncId]
+                val dbTrack = dbTrackByTrackerId[track.trackerId]
                     ?: // New track
                     return@mapNotNull track.copy(
                         id = 0, // Let DB assign new ID
@@ -380,7 +380,7 @@ class MangaRestorer(
                 existingTracks.forEach { track ->
                     manga_syncQueries.update(
                         track.mangaId,
-                        track.syncId,
+                        track.trackerId,
                         track.remoteId,
                         track.libraryId,
                         track.title,
