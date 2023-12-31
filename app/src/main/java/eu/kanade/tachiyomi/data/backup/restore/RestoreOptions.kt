@@ -10,6 +10,12 @@ data class RestoreOptions(
     val sourceSettings: Boolean = true,
 ) {
 
+    fun asBooleanArray() = booleanArrayOf(
+        library,
+        appSettings,
+        sourceSettings,
+    )
+
     fun anyEnabled() = library || appSettings || sourceSettings
 
     companion object {
@@ -29,6 +35,12 @@ data class RestoreOptions(
                 getter = RestoreOptions::sourceSettings,
                 setter = { options, enabled -> options.copy(sourceSettings = enabled) },
             ),
+        )
+
+        fun fromBooleanArray(array: BooleanArray) = RestoreOptions(
+            library = array[0],
+            appSettings = array[1],
+            sourceSettings = array[2],
         )
     }
 

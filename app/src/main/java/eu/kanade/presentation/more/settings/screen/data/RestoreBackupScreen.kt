@@ -4,14 +4,9 @@ import android.content.Context
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,7 +15,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
+import androidx.core.net.toUri
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -35,13 +34,14 @@ import eu.kanade.tachiyomi.util.system.DeviceUtil
 import kotlinx.coroutines.flow.update
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.LabeledCheckbox
+import tachiyomi.presentation.core.components.LazyColumnWithAction
 import tachiyomi.presentation.core.components.SectionCard
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.components.material.padding
 import tachiyomi.presentation.core.i18n.stringResource
 
 class RestoreBackupScreen(
-    private val uri: Uri,
+    private val uri: String,
 ) : Screen() {
 
     @Composable
@@ -60,58 +60,39 @@ class RestoreBackupScreen(
                 )
             },
         ) { contentPadding ->
-            Column(
-                modifier = Modifier
-                    .padding(contentPadding)
-                    .fillMaxSize(),
+            LazyColumnWithAction(
+                contentPadding = contentPadding,
+                actionLabel = stringResource(MR.strings.action_restore),
+                actionEnabled = state.canRestore && state.options.anyEnabled(),
+                onClickAction = {
+                    model.startRestore()
+                    navigator.pop()
+                },
             ) {
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                ) {
-                    if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
-                        item {
-                            WarningBanner(MR.strings.restore_miui_warning)
-                        }
-                    }
-
-                    if (state.canRestore) {
-                        item {
-                            SectionCard {
-                                RestoreOptions.options.forEach { option ->
-                                    LabeledCheckbox(
-                                        label = stringResource(option.label),
-                                        checked = option.getter(state.options),
-                                        onCheckedChange = {
-                                            model.toggle(option.setter, it)
-                                        },
-                                        modifier = Modifier.padding(horizontal = MaterialTheme.padding.medium),
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    if (state.error != null) {
-                        errorMessageItem(state.error)
+                if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
+                    item {
+                        WarningBanner(MR.strings.restore_miui_warning)
                     }
                 }
 
-                HorizontalDivider()
+                if (state.canRestore) {
+                    item {
+                        SectionCard {
+                            RestoreOptions.options.forEach { option ->
+                                LabeledCheckbox(
+                                    label = stringResource(option.label),
+                                    checked = option.getter(state.options),
+                                    onCheckedChange = {
+                                        model.toggle(option.setter, it)
+                                    },
+                                )
+                            }
+                        }
+                    }
+                }
 
-                Button(
-                    enabled = state.canRestore && state.options.anyEnabled(),
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .fillMaxWidth(),
-                    onClick = {
-                        model.startRestore()
-                        navigator.pop()
-                    },
-                ) {
-                    Text(
-                        text = stringResource(MR.strings.action_restore),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
+                if (state.error != null) {
+                    errorMessageItem(state.error)
                 }
             }
         }
@@ -126,47 +107,56 @@ class RestoreBackupScreen(
                     modifier = Modifier.padding(horizontal = MaterialTheme.padding.medium),
                     verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
                 ) {
-                    when (error) {
-                        is MissingRestoreComponents -> {
-                            val msg = buildString {
-                                append(stringResource(MR.strings.backup_restore_content_full))
+                    val msg = buildAnnotatedString {
+                        when (error) {
+                            is MissingRestoreComponents -> {
+                                appendLine(stringResource(MR.strings.backup_restore_content_full))
                                 if (error.sources.isNotEmpty()) {
-                                    append("\n\n")
-                                    append(stringResource(MR.strings.backup_restore_missing_sources))
+                                    appendLine()
+                                    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                                        appendLine(stringResource(MR.strings.backup_restore_missing_sources))
+                                    }
                                     error.sources.joinTo(
                                         this,
                                         separator = "\n- ",
-                                        prefix = "\n- ",
+                                        prefix = "- ",
                                     )
                                 }
                                 if (error.trackers.isNotEmpty()) {
-                                    append("\n\n")
-                                    append(stringResource(MR.strings.backup_restore_missing_trackers))
+                                    appendLine()
+                                    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                                        appendLine(stringResource(MR.strings.backup_restore_missing_trackers))
+                                    }
                                     error.trackers.joinTo(
                                         this,
                                         separator = "\n- ",
-                                        prefix = "\n- ",
+                                        prefix = "- ",
                                     )
                                 }
                             }
-                            SelectionContainer {
-                                Text(text = msg)
+
+                            is InvalidRestore -> {
+                                withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                                    appendLine(stringResource(MR.strings.invalid_backup_file))
+                                }
+                                appendLine(error.uri.toString())
+
+                                appendLine()
+
+                                withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                                    appendLine(stringResource(MR.strings.invalid_backup_file_error))
+                                }
+                                appendLine(error.message)
+                            }
+
+                            else -> {
+                                appendLine(error.toString())
                             }
                         }
+                    }
 
-                        is InvalidRestore -> {
-                            Text(text = stringResource(MR.strings.invalid_backup_file))
-
-                            SelectionContainer {
-                                Text(text = listOfNotNull(error.uri, error.message).joinToString("\n\n"))
-                            }
-                        }
-
-                        else -> {
-                            SelectionContainer {
-                                Text(text = error.toString())
-                            }
-                        }
+                    SelectionContainer {
+                        Text(text = msg)
                     }
                 }
             }
@@ -176,11 +166,11 @@ class RestoreBackupScreen(
 
 private class RestoreBackupScreenModel(
     private val context: Context,
-    private val uri: Uri,
+    private val uri: String,
 ) : StateScreenModel<RestoreBackupScreenModel.State>(State()) {
 
     init {
-        validate(uri)
+        validate(uri.toUri())
     }
 
     fun toggle(setter: (RestoreOptions, Boolean) -> RestoreOptions, enabled: Boolean) {
@@ -194,7 +184,7 @@ private class RestoreBackupScreenModel(
     fun startRestore() {
         BackupRestoreJob.start(
             context = context,
-            uri = uri,
+            uri = uri.toUri(),
             options = state.value.options,
         )
     }

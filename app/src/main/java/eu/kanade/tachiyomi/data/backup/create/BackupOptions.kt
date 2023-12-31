@@ -15,27 +15,47 @@ data class BackupOptions(
     val privateSettings: Boolean = false,
 ) {
 
+    fun asBooleanArray() = booleanArrayOf(
+        libraryEntries,
+        categories,
+        chapters,
+        tracking,
+        history,
+        appSettings,
+        sourceSettings,
+        privateSettings,
+    )
+
     companion object {
         val libraryOptions = persistentListOf(
+            Entry(
+                label = MR.strings.manga,
+                getter = BackupOptions::libraryEntries,
+                setter = { options, enabled -> options.copy(libraryEntries = enabled) },
+            ),
             Entry(
                 label = MR.strings.categories,
                 getter = BackupOptions::categories,
                 setter = { options, enabled -> options.copy(categories = enabled) },
+                enabled = { it.libraryEntries },
             ),
             Entry(
                 label = MR.strings.chapters,
                 getter = BackupOptions::chapters,
                 setter = { options, enabled -> options.copy(chapters = enabled) },
+                enabled = { it.libraryEntries },
             ),
             Entry(
                 label = MR.strings.track,
                 getter = BackupOptions::tracking,
                 setter = { options, enabled -> options.copy(tracking = enabled) },
+                enabled = { it.libraryEntries },
             ),
             Entry(
                 label = MR.strings.history,
                 getter = BackupOptions::history,
                 setter = { options, enabled -> options.copy(history = enabled) },
+                enabled = { it.libraryEntries },
             ),
         )
 
@@ -54,7 +74,19 @@ data class BackupOptions(
                 label = MR.strings.private_settings,
                 getter = BackupOptions::privateSettings,
                 setter = { options, enabled -> options.copy(privateSettings = enabled) },
+                enabled = { it.appSettings || it.sourceSettings },
             ),
+        )
+
+        fun fromBooleanArray(array: BooleanArray) = BackupOptions(
+            libraryEntries = array[0],
+            categories = array[1],
+            chapters = array[2],
+            tracking = array[3],
+            history = array[4],
+            appSettings = array[5],
+            sourceSettings = array[6],
+            privateSettings = array[7],
         )
     }
 
@@ -62,5 +94,6 @@ data class BackupOptions(
         val label: StringResource,
         val getter: (BackupOptions) -> Boolean,
         val setter: (BackupOptions, Boolean) -> BackupOptions,
+        val enabled: (BackupOptions) -> Boolean = { true },
     )
 }
