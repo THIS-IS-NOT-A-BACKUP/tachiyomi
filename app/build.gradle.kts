@@ -8,10 +8,6 @@ plugins {
     id("com.github.zellius.shortcut-helper")
 }
 
-if (gradle.startParameter.taskRequests.toString().contains("Standard")) {
-    apply<com.google.gms.googleservices.GoogleServicesPlugin>()
-}
-
 shortcutHelper.setFilePath("./shortcuts.xml")
 
 val SUPPORTED_ABIS = setOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
@@ -22,17 +18,14 @@ android {
     defaultConfig {
         applicationId = "eu.kanade.tachiyomi"
 
-        versionCode = 118
-        versionName = "0.15.2"
+        versionCode = 119
+        versionName = "0.15.3"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
         buildConfigField("String", "COMMIT_SHA", "\"${getGitSha()}\"")
         buildConfigField("String", "BUILD_TIME", "\"${getBuildTime()}\"")
         buildConfigField("boolean", "INCLUDE_UPDATER", "false")
         buildConfigField("boolean", "PREVIEW", "false")
-
-        // Please disable ACRA or use your own instance in forked versions of the project
-        buildConfigField("String", "ACRA_URI", "\"https://tachiyomi.kanade.eu/crash_report\"")
 
         ndk {
             abiFilters += SUPPORTED_ABIS
@@ -244,10 +237,6 @@ dependencies {
 
     // Logging
     implementation(libs.logcat)
-
-    // Crash reports/analytics
-    implementation(libs.bundles.acra)
-    "standardImplementation"(libs.firebase.analytics)
 
     // Shizuku
     implementation(libs.bundles.shizuku)
